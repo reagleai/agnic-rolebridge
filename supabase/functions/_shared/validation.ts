@@ -59,41 +59,17 @@ export function validateEmail(email: string): boolean {
 
 // ── Section name normalization ──
 
-const SECTION_ALIASES: Record<string, string> = {
-  // Work Experience aliases
+const SECTION_MAP: Record<string, string> = {
   "work experience": "Work Experience",
-  "experience": "Work Experience",
+  experience: "Work Experience",
   "professional experience": "Work Experience",
   "work history": "Work Experience",
-  "employment history": "Work Experience",
-  "professional background": "Work Experience",
-  "career history": "Work Experience",
-  "relevant experience": "Work Experience",
-  "internship experience": "Work Experience",
-  "employment": "Work Experience",
-
-  // Projects aliases
-  "projects": "Projects",
+  projects: "Projects",
   "personal projects": "Projects",
   "side projects": "Projects",
-  "academic projects": "Projects",
-  "relevant projects": "Projects",
-  "selected projects": "Projects",
-  "project experience": "Projects",
-  "key projects": "Projects",
-
-  // Skills aliases
-  "skills": "Skills",
+  skills: "Skills",
   "technical skills": "Skills",
   "core competencies": "Skills",
-  "key skills": "Skills",
-  "skills and tools": "Skills",
-  "technical proficiencies": "Skills",
-  "tools and technologies": "Skills",
-  "competencies": "Skills",
-  "expertise": "Skills",
-  "tech stack": "Skills",
-  "technologies": "Skills"
 };
 
 /**
@@ -106,15 +82,7 @@ export function validateSectionName(
   if (!name || typeof name !== "string") {
     return { valid: false, canonical: null };
   }
-  // Normalize string: lowercase, swap & to and, remove punctuation, collapse spaces
-  const key = name
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const canonical = SECTION_ALIASES[key] ?? null;
+  const key = name.trim().toLowerCase();
+  const canonical = SECTION_MAP[key] ?? null;
   return { valid: canonical !== null, canonical };
 }
