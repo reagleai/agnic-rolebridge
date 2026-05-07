@@ -10,10 +10,10 @@
 // ── Default model identifiers (overridden by env vars) ──
 
 const DEFAULT_MODELS: Record<string, string> = {
-  section_extraction: "inclusionai/ling-2.6-1t:free",
-  question_generation: "inclusionai/ling-2.6-1t:free",
-  answer_evaluation: "inclusionai/ling-2.6-1t:free",
-  report_generation: "inclusionai/ling-2.6-1t:free",
+  section_extraction: "poolside/laguna-m.1:free",
+  question_generation: "poolside/laguna-m.1:free",
+  answer_evaluation: "poolside/laguna-m.1:free",
+  report_generation: "poolside/laguna-m.1:free",
 };
 
 // Env var keys follow the pattern LLM_MODEL_<TASK_UPPER>
@@ -132,7 +132,7 @@ export async function callLLM(
         task,
         systemPrompt,
         userPrompt +
-          "\n\nIMPORTANT: Your previous response was not valid JSON. Return ONLY the JSON object, no other text.",
+        "\n\nIMPORTANT: Your previous response was not valid JSON. Return ONLY the JSON object, no other text.",
         retryCount + 1
       );
     }
