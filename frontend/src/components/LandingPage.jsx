@@ -37,15 +37,15 @@ export default function LandingPage() {
   return (
     <div className="page-center">
       <div className="card landing-card">
-        <div className="landing-badge">AI Interview Simulator</div>
+        <div className="landing-badge">Career Transition Simulator</div>
         <h1 className="landing-title">RoleBridge</h1>
         <p className="landing-subtitle">
-          Practice targeted interview questions generated from your resume and
-          target job description. Get a detailed evaluation report.
+          Defend and translate your real experience under follow-up pressure.
+          Practice targeted interview questions generated from your resume and target job description.
         </p>
         <form onSubmit={handleSubmit} className="landing-form">
           <label htmlFor="email" className="form-label">
-            Your email (for the report)
+            Your email (for the detailed report card)
           </label>
           <input
             id="email"
