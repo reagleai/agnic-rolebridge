@@ -60,17 +60,16 @@ export default function LandingPage() {
 
       {/* ─── Hero ─── */}
       <section className="landing-section landing-hero">
-        <div className="pill">Interview Pressure-Test</div>
+        <div className="section-label">Interview Pressure-Test</div>
 
         <h1 className="landing-hero__headline">
           Your resume got you in.<br />
-          Can your answers hold up?
+          <span className="highlight">Can your answers hold up?</span>
         </h1>
 
         <p className="landing-hero__subhead">
-          RoleBridge simulates a focused interview using your real resume and
-          target job description — then pushes on weak answers so you can find
-          where your story breaks before the real thing.
+          Most career changers lose offers not in screening — but when an interviewer pushes back on their story.
+          RoleBridge takes your resume and target role, then applies follow-up pressure on the section that matters most — so you know exactly where your story breaks before it costs you.
         </p>
 
         <form onSubmit={handleSubmit} className="landing-hero__form">
