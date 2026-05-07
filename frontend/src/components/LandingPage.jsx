@@ -37,7 +37,7 @@ export default function LandingPage() {
   return (
     <div className="page-center">
       <div className="card landing-card">
-        <div className="landing-badge">Career Transition Simulator</div>
+        <div className="pill">Career Transition Simulator</div>
         <h1 className="landing-title">RoleBridge</h1>
         <p className="landing-subtitle">
           Defend and translate your real experience under follow-up pressure.
