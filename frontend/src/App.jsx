@@ -3,6 +3,7 @@
  * Block D — overwrites Block A shell with full routing.
  */
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ThemeToggle from './components/ThemeToggle';
 import LandingPage from './components/LandingPage';
 import SetupPage from './components/SetupPage';
 import InterviewPage from './components/InterviewPage';
@@ -11,6 +12,7 @@ import EndPage from './components/EndPage';
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeToggle />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/setup/:id" element={<SetupPage />} />
