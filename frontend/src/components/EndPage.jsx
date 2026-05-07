@@ -21,11 +21,7 @@ export default function EndPage() {
         <p className="end-note">
           📬 Check your inbox (and spam folder) within the next few minutes.
         </p>
-        {sessionId && (
-          <p className="end-session-id">
-            Session ID: <code>{sessionId}</code>
-          </p>
-        )}
+
       </div>
     </div>
   );
