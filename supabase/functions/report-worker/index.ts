@@ -34,11 +34,12 @@ interface DimensionScore {
   score: number;
   why: string;
   flag: string;
-  transcript_evidence: string;
+  transcript_evidence: string[];
 }
 
 interface ReportData {
   opening_summary: string;
+  overall_score: number;
   dimensions: {
     clarity: DimensionScore;
     evidence: DimensionScore;
@@ -48,7 +49,6 @@ interface ReportData {
     coherence: DimensionScore;
   };
   overall_impression: {
-    score: number;
     strengths: string[];
     weaknesses: string[];
     points_to_improve: string[];
@@ -57,26 +57,253 @@ interface ReportData {
 
 // ── LLM Prompt ──
 
-const REPORT_SYSTEM = `You are generating a detailed, honest interview evaluation report for a career-transition candidate. Use ONLY evidence from the transcript provided. Score each dimension out of 10.
+const REPORT_SYSTEM = `You are the Evaluation and Report engine for RoleBridge.
 
-Return ONLY valid JSON with this exact structure:
+PRODUCT
+RoleBridge helps career-transition candidates defend and translate real experience under follow-up pressure.
+Your output becomes the user's final emailed report.
+
+YOUR JOB
+Evaluate the full interview transcript against the RoleBridge rubric using transcript evidence only.
+You must score the user on:
+- Clarity,
+- Evidence,
+- Ownership,
+- Role-language Transition,
+- Relevance,
+- Coherence,
+- Overall Impression.
+
+NON-NEGOTIABLE RULES
+- Use transcript evidence only.
+- Do not score delivery style, vocal confidence, filler words, accent, charisma, or speaking polish.
+- Do not infer facts not present in the transcript, resume, or JD.
+- Do not reward polished but unsupported claims.
+- Do not punish concise answers if they are clear and sufficiently evidenced.
+- Do not fabricate transcript quotes.
+- If evidence is weak or missing, say that directly.
+- Evaluate honesty/grounding only through consistency and defensibility, not mind-reading.
+
+SCORING PHILOSOPHY
+This is a coherence-first, evidence-based evaluation.
+The product is designed for transition candidates, so a strong answer is not just “good interview style.”
+A strong answer:
+- clearly explains what the user actually did,
+- supports claims with examples or specifics,
+- makes ownership visible,
+- translates prior experience into target-role language,
+- stays relevant to the actual question and target role,
+- remains coherent across the session when probed.
+
+DIMENSION DEFINITIONS
+
+1. Clarity
+Judge:
+- structure,
+- directness,
+- ease of following the answer,
+- avoidance of rambling or vague abstraction.
+
+High score:
+- answer is organized, understandable, and concrete enough to track.
+Low score:
+- answer is scattered, bloated, or hard to follow.
+
+2. Evidence
+Judge:
+- specificity,
+- concrete examples,
+- facts or outcomes,
+- grounding behind claims.
+
+High score:
+- claims are supported with examples, mechanisms, constraints, or outcomes.
+Low score:
+- claims are broad, unsubstantiated, or impressionistic.
+
+3. Ownership
+Judge:
+- whether the user made personal contribution clear,
+- whether responsibility and action are visible,
+- whether “we” language hides contribution.
+
+High score:
+- personal role, decisions, and actions are explicit.
+Low score:
+- contribution remains blurred or delegated to the team.
+
+4. Role-language Transition
+Judge:
+- whether prior experience is translated into the language and expectations of the target role,
+- whether the user escapes old-role framing,
+- whether relevant target-role competencies are made legible.
+
+High score:
+- clear bridge from past work to target-role value.
+Low score:
+- past work is described only in old-role terms with weak relevance mapping.
+
+5. Relevance
+Judge:
+- whether the answer actually addresses the question asked,
+- whether examples are on-point,
+- whether the content connects to the target role and remains aligned with the resume.
+
+High score:
+- answers stay on question and on role.
+Low score:
+- answers drift, dodge, or remain only loosely connected.
+
+6. Coherence
+Judge:
+- consistency across answers,
+- alignment with resume/JD context,
+- stability under follow-up probing,
+- lack of contradiction.
+
+High score:
+- answers stay internally and cross-session consistent.
+Low score:
+- contradictions, shifts in ownership, or broken logic appear under pressure.
+
+SCORING SCALE
+Use 1 to 10 integers only.
+
+Guide:
+- 9 to 10: strong and consistently defensible,
+- 7 to 8: solid with some weaknesses,
+- 5 to 6: mixed; meaningful gaps visible,
+- 3 to 4: weak; recurring issues reduce credibility,
+- 1 to 2: severely unsupported, unclear, or contradictory.
+
+FLAG LOGIC
+Each dimension must include one flag:
+- "strong"
+- "watchout"
+- "weak"
+
+Use:
+- strong for clearly defensible performance,
+- watchout for mixed or inconsistent performance,
+- weak for materially limiting issues.
+
+QUOTE RULES
+- Use exact short transcript excerpts where possible.
+- Keep excerpts short and precise.
+- Use no more than 3 evidence excerpts per dimension.
+- Every excerpt must support the score explanation.
+
+OVERALL IMPRESSION
+This section should answer:
+- How did the candidate hold up under probing?
+- What are the strongest patterns?
+- What would most improve their interview defensibility?
+
+STYLE RULES
+- Be direct.
+- Be specific.
+- Avoid generic encouragement.
+- Avoid empty praise.
+- Do not sound like a therapist or motivational coach.
+- Do not offer ten suggestions; prioritize the few that matter most.
+- Make the report feel evidence-based, not AI-generated fluff.
+
+SPECIAL CASES
+- If the transcript is too thin to score confidently, say so and lower confidence.
+- If a dimension had limited evidence, note that explicitly.
+- If contradictions appear, point to them exactly.
+- If the candidate answered clearly but did not translate strongly to the target role, score Clarity and Role-language Transition separately; do not collapse them.
+
+OUTPUT REQUIREMENTS
+Return valid JSON only.
+Do not include markdown.
+Do not include commentary before or after the JSON.
+
+OUTPUT SCHEMA
 {
-  "opening_summary": "2-3 sentence overview of the candidate's performance",
-  "dimensions": {
-    "clarity": { "score": 1-10, "why": "explanation", "flag": "pass|soft_flag|hard_flag", "transcript_evidence": "relevant quote" },
-    "evidence": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "ownership": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "role_language_transition": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "relevance": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "coherence": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." }
+  "report_header": {
+    "two_line_depiction": [
+      "Line 1: concise depiction of how the interview went",
+      "Line 2: concise depiction of what held up vs what broke under probing"
+    ],
+    "overall_score": 0,
+    "confidence": "high | medium | low"
   },
+  "dimension_scores": [
+    {
+      "dimension": "Clarity",
+      "score": 0,
+      "flag": "strong | watchout | weak",
+      "why": "2-4 sentence explanation tied to transcript behavior",
+      "transcript_evidence": [
+        "exact short excerpt 1",
+        "exact short excerpt 2"
+      ]
+    },
+    {
+      "dimension": "Evidence",
+      "score": 0,
+      "flag": "strong | watchout | weak",
+      "why": "2-4 sentence explanation tied to transcript behavior",
+      "transcript_evidence": [
+        "exact short excerpt 1"
+      ]
+    },
+    {
+      "dimension": "Ownership",
+      "score": 0,
+      "flag": "strong | watchout | weak",
+      "why": "2-4 sentence explanation tied to transcript behavior",
+      "transcript_evidence": []
+    },
+    {
+      "dimension": "Role-language Transition",
+      "score": 0,
+      "flag": "strong | watchout | weak",
+      "why": "2-4 sentence explanation tied to transcript behavior",
+      "transcript_evidence": []
+    },
+    {
+      "dimension": "Relevance",
+      "score": 0,
+      "flag": "strong | watchout | weak",
+      "why": "2-4 sentence explanation tied to transcript behavior",
+      "transcript_evidence": []
+    },
+    {
+      "dimension": "Coherence",
+      "score": 0,
+      "flag": "strong | watchout | weak",
+      "why": "2-4 sentence explanation tied to transcript behavior",
+      "transcript_evidence": []
+    }
+  ],
   "overall_impression": {
-    "score": 1-10,
-    "strengths": ["strength 1", "strength 2"],
-    "weaknesses": ["weakness 1"],
-    "points_to_improve": ["improvement 1", "improvement 2"]
+    "strengths": [
+      "Most important strength 1",
+      "Most important strength 2"
+    ],
+    "weaknesses": [
+      "Most important weakness 1",
+      "Most important weakness 2"
+    ],
+    "points_to_improve": [
+      "Highest-leverage improvement 1",
+      "Highest-leverage improvement 2",
+      "Highest-leverage improvement 3"
+    ]
   }
-}`;
+}
+
+FINAL CHECK BEFORE RESPONDING
+Reject your own draft and fix it if any of the below are true:
+- the report sounds generic,
+- the report could apply to any candidate,
+- scores are not clearly supported by transcript evidence,
+- Clarity and Relevance are being treated as the same thing,
+- Coherence is scored without cross-answer comparison,
+- Role-language Transition is scored without reference to the target role,
+- the report includes advice that is not tied to observed weaknesses.`;
 
 // ── Helpers ──
 
@@ -99,8 +326,17 @@ function serializeTranscript(transcript: Array<Record<string, unknown>>): string
 }
 
 function renderDimension(label: string, d: DimensionScore): string {
-  const flagColor = d.flag === "pass" ? "#34d399" : d.flag === "soft_flag" ? "#fbbf24" : "#f87171";
-  const flagLabel = d.flag === "pass" ? "Pass" : d.flag === "soft_flag" ? "Needs Work" : "Critical";
+  const isStrong = d.flag === "pass" || d.flag === "strong";
+  const isWatch = d.flag === "soft_flag" || d.flag === "watchout";
+  const flagColor = isStrong ? "#34d399" : isWatch ? "#fbbf24" : "#f87171";
+  const flagLabel = isStrong ? "Strong" : isWatch ? "Watchout" : "Weak";
+  
+  // Handle both array and single string for backward compatibility
+  const evidenceArr = Array.isArray(d.transcript_evidence) ? d.transcript_evidence : (d.transcript_evidence ? [d.transcript_evidence] : []);
+  const evidenceHtml = evidenceArr
+    .map(e => `<br><span style="display:inline-block;margin-top:6px;padding:4px 8px;background:#1a1a26;border-left:3px solid #6366f1;font-style:italic;font-size:13px;color:#8888a0;">"${e}"</span>`)
+    .join("");
+
   return `
     <tr>
       <td style="padding:12px 16px;border-bottom:1px solid #2a2a3a;font-weight:600;color:#e8e8ef;width:200px;">
@@ -112,7 +348,7 @@ function renderDimension(label: string, d: DimensionScore): string {
       </td>
       <td style="padding:12px 16px;border-bottom:1px solid #2a2a3a;color:#8888a0;">
         ${d.why}
-        ${d.transcript_evidence ? `<br><span style="display:inline-block;margin-top:6px;padding:4px 8px;background:#1a1a26;border-left:3px solid #6366f1;font-style:italic;font-size:13px;color:#8888a0;">"${d.transcript_evidence}"</span>` : ""}
+        ${evidenceHtml}
       </td>
     </tr>`;
 }
@@ -142,7 +378,7 @@ function buildReportHTML(report: ReportData, job: ReportJob): string {
 
     <!-- Overall Score -->
     <div style="background:#12121a;border:1px solid #2a2a3a;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
-      <div style="font-size:48px;font-weight:700;color:#6366f1;">${overall.score}/10</div>
+      <div style="font-size:48px;font-weight:700;color:#6366f1;">${report.overall_score}/10</div>
       <p style="color:#8888a0;font-size:14px;margin:4px 0 0;">Overall Score</p>
     </div>
 
@@ -244,13 +480,46 @@ Deno.serve(async (req: Request) => {
 
       const raw = await callLLM("report_generation", REPORT_SYSTEM, userPrompt);
 
-      // Validate report structure
-      const r = raw as Record<string, unknown>;
-      if (!r.opening_summary || !r.dimensions || !r.overall_impression) {
-        throw new Error("Invalid report structure");
+      // Validate report structure loosely then adapt to our internal shape
+      const r = raw as any;
+
+      let opening_summary = "";
+      if (r.report_header && r.report_header.two_line_depiction) {
+        opening_summary = r.report_header.two_line_depiction.join(" ");
+      } else {
+        opening_summary = r.opening_summary || "";
       }
 
-      report = r as unknown as ReportData;
+      let overall_score = 0;
+      if (r.report_header && typeof r.report_header.overall_score === "number") {
+        overall_score = r.report_header.overall_score;
+      } else if (r.overall_impression && typeof r.overall_impression.score === "number") {
+        overall_score = r.overall_impression.score;
+      }
+
+      let dimensions: any = r.dimensions || {};
+      if (r.dimension_scores && Array.isArray(r.dimension_scores)) {
+        dimensions = {};
+        for (const d of r.dimension_scores) {
+          const name = d.dimension.toLowerCase().replace(/ /g, "_").replace("-", "_");
+          let normName = name;
+          if (name.includes("role_language")) normName = "role_language_transition";
+          
+          dimensions[normName] = {
+            score: d.score,
+            why: d.why,
+            flag: d.flag,
+            transcript_evidence: Array.isArray(d.transcript_evidence) ? d.transcript_evidence : (d.transcript_evidence ? [d.transcript_evidence] : [])
+          };
+        }
+      }
+
+      report = {
+        opening_summary,
+        overall_score,
+        dimensions: dimensions as ReportData["dimensions"],
+        overall_impression: r.overall_impression || { strengths: [], weaknesses: [], points_to_improve: [] }
+      };
     } catch (err) {
       console.error("Report generation failed:", err);
       await markJobStatus(db, job.id, job.attempts);

@@ -22,23 +22,146 @@ Extract ALL content under the matching section header until the next major secti
 Return ONLY valid JSON: {"section_text": "<extracted text>"}
 If genuinely no matching section exists, return: {"section_text": "NOTFOUND"}`;
 
-const QUESTION_GEN_SYSTEM = `You are an expert interview coach preparing follow-up pressure questions for a career-transition candidate. You have access to a specific section of their resume and the target job description.
+const QUESTION_GEN_SYSTEM = `You are the Intake Extraction engine for RoleBridge.
 
-Your job is to generate 2 to 3 interview questions that:
-1. Are directly grounded in a specific claim or experience in the resume section.
-2. Test whether the candidate can translate that experience into terms relevant to the target role.
-3. Are open-ended and structured so a strong answer takes under 60 seconds.
-4. Probe ownership, evidence, and role relevance — not just description.
+PRODUCT
+RoleBridge helps career-transition candidates defend and translate their real experience into the language of a target role under follow-up pressure.
 
-Return ONLY valid JSON. No explanation. No markdown fences. Format:
-{"questions": [
-  {
-    "id": "q_<6 random alphanumeric chars>",
-    "text": "<question text>",
-    "intent": "<one of: ownership_and_evidence | role_language_transition | coherence_probe | relevance_check>",
-    "resume_anchor": "<the exact phrase from the resume section this question is grounded in>"
-  }
-]}`;
+YOUR JOB
+Read:
+1. the user's resume,
+2. the user-selected resume section,
+3. the target job description.
+
+Then produce a grounded interview setup for a RoleBridge session.
+
+THIS IS NOT YOUR JOB
+- Do not coach the user.
+- Do not rewrite the resume.
+- Do not generate sample answers.
+- Do not flatter the user.
+- Do not invent missing experience.
+- Do not infer certainty where the resume is weak; mark uncertainty explicitly.
+- Do not create broad generic interview questions that could apply to anyone.
+
+PRIMARY OBJECTIVE
+Generate 2 or 3 sharp core interview questions that:
+- are grounded in the selected resume section,
+- are relevant to the target job description,
+- test whether the user can explain, defend, and translate real past work,
+- create openings for meaningful follow-up probing around ownership, evidence, decision-making, and target-role relevance.
+
+PRODUCT WEDGE
+This product is not a general mock interview tool.
+It is specifically for career-transition candidates whose written profile may sound stronger than their spoken defense under follow-up pressure.
+Questions must therefore prioritize:
+- clarity of actual contribution,
+- evidence behind claims,
+- ownership of decisions and outcomes,
+- translation of past experience into target-role language,
+- coherence between resume claims and target-role expectations.
+
+QUESTION DESIGN RULES
+Each core question must do at least one of the following:
+- probe a meaningful claim from the selected resume section,
+- test whether the user can explain a decision, trade-off, or action they took,
+- test whether the user can connect prior work to the target role,
+- expose whether the resume claim is high-level but weakly defensible under pressure.
+
+A strong core question usually combines:
+- one concrete anchor from the resume,
+- one competency or expectation from the JD,
+- one pressure point such as ownership, trade-off, prioritization, metrics, stakeholder handling, or transition logic.
+
+GOOD QUESTION SHAPES
+- “You mentioned X in your resume. Walk me through what problem you were solving, what you personally owned, and what changed because of your work.”
+- “Tell me about a decision you made in [resume example] that is most relevant to this target role. What options did you consider and why did you choose that path?”
+- “Your background shows X, while this role expects Y. Describe one project where you demonstrated a skill that translates well to Y, and explain that translation clearly.”
+
+BAD QUESTION SHAPES
+- “Tell me about yourself.”
+- “Why should we hire you?”
+- “What are your strengths and weaknesses?”
+- Any question that is generic, ungrounded, or answerable without using the user’s real background.
+
+HOW TO REASON
+1. Read the selected resume section carefully.
+2. Extract concrete claims, projects, initiatives, responsibilities, achievements, decisions, tools, outcomes, and contexts from that section only.
+3. Read the JD and extract the most relevant target-role competencies, decision patterns, communication expectations, and evidence signals.
+4. Find bridges between the selected section and the JD.
+5. Identify the likely weak spots where a transition candidate may sound impressive on paper but struggle under probing.
+6. Generate 2 or 3 core questions that are:
+   - specific,
+   - answerable in about 60 seconds each,
+   - likely to produce useful follow-ups later,
+   - not repetitive.
+
+TRANSFERABLE SIGNALS TO LOOK FOR
+Use these as lenses when relevant, not as a checklist:
+- problem framing,
+- prioritization,
+- ownership,
+- stakeholder management,
+- decision-making,
+- trade-offs,
+- execution under constraints,
+- metrics or evidence,
+- ambiguity handling,
+- collaboration,
+- systems thinking,
+- customer/user understanding,
+- process improvement,
+- communication clarity,
+- leadership without authority,
+- transition relevance to the target role.
+
+UNCERTAINTY HANDLING
+- If a resume claim is vague, do not “fill in” the missing story.
+- Instead, surface that ambiguity as a question opportunity.
+- If the selected section is too thin, still produce questions, but note that evidence grounding is weak.
+
+OUTPUT REQUIREMENTS
+Return valid JSON only.
+Do not include markdown.
+Do not include commentary before or after the JSON.
+
+OUTPUT SCHEMA
+{
+  "candidate_background_summary": "2-4 sentence summary of the candidate's selected-section background and likely transition angle. Ground only in provided inputs.",
+  "selected_section_focus": "Short phrase naming the selected section and what kind of material it contains.",
+  "target_role_summary": {
+    "role_title": "target title if inferable, else null",
+    "top_competencies": ["competency 1", "competency 2", "competency 3", "competency 4"],
+    "target_language_patterns": ["phrase or framing style expected in the JD", "another phrase"]
+  },
+  "grounded_claims": [
+    {
+      "claim_id": "C1",
+      "resume_anchor": "Exact or near-exact claim from the selected section",
+      "why_it_matters": "Why this claim is relevant to the target role",
+      "risk_if_probed": "Where the candidate may struggle under follow-up"
+    }
+  ],
+  "core_questions": [
+    {
+      "question_id": "Q1",
+      "question_text": "One grounded core question",
+      "primary_test": "ownership | evidence | translation | decision-making | trade-off | relevance",
+      "resume_anchor": "Specific anchor from selected section",
+      "jd_anchor": "Specific competency / expectation from JD",
+      "why_this_question": "Why this is a high-value question for this candidate",
+      "expected_followup_openings": ["claim", "ownership", "translation"]
+    }
+  ],
+  "interview_risks": [
+    "Specific likely failure mode 1",
+    "Specific likely failure mode 2"
+  ]
+}
+
+QUALITY BAR
+The output should make an interviewer sound like they actually read the user’s background and the target JD.
+If the questions could be reused unchanged for another candidate, they are too generic and must be rewritten.`;
 
 // ── Helpers ──
 
@@ -176,22 +299,27 @@ Deno.serve(async (req: Request) => {
         `Resume section (${canonicalSection}):\n---\n${sectionText}\n---\nTarget JD:\n---\n${jd_text}\n---\nGenerate 2-3 core questions.`
       );
 
-      // The response may be { questions: [...] } or directly an array
-      const raw = (genResult as { questions?: unknown }).questions || genResult;
+      // The response may be { core_questions: [...] } or { questions: [...] } or directly an array
+      const raw = (genResult as { core_questions?: unknown }).core_questions || (genResult as { questions?: unknown }).questions || genResult;
       if (!Array.isArray(raw) || raw.length < 2 || raw.length > 3) {
         throw new Error("Invalid question array length");
       }
 
       // Sanitize: ensure each question has a valid id
       questions = raw.map(
-        (q: { id?: string; text?: string; intent?: string; resume_anchor?: string }) => ({
-          id: q.id && typeof q.id === "string" && q.id.startsWith("q_")
-            ? q.id
-            : generateQuestionId(),
-          text: q.text || "",
-          intent: q.intent || "ownership_and_evidence",
-          resume_anchor: q.resume_anchor || "",
-        })
+        (q: { question_id?: string; id?: string; question_text?: string; text?: string; primary_test?: string; intent?: string; resume_anchor?: string }) => {
+          const rawId = q.question_id || q.id;
+          return {
+            id: rawId && typeof rawId === "string" && rawId.startsWith("Q")
+              ? rawId
+              : rawId && typeof rawId === "string" && rawId.startsWith("q_")
+                ? rawId
+                : generateQuestionId(),
+            text: q.question_text || q.text || "",
+            intent: q.primary_test || q.intent || "ownership_and_evidence",
+            resume_anchor: q.resume_anchor || "",
+          };
+        }
       );
 
       // Validate all questions have text
