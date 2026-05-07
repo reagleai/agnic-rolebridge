@@ -2,12 +2,33 @@
  * End page — session complete, report pending message.
  * Block D — frontend/src/components/EndPage.jsx
  */
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { createSession } from '../lib/api';
 
 export default function EndPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const email = location.state?.email || 'your email';
   const sessionId = location.state?.sessionId || '';
+  const [isRestarting, setIsRestarting] = useState(false);
+
+  const handleRestart = async () => {
+    if (!email || email === 'your email') {
+      navigate('/');
+      return;
+    }
+    setIsRestarting(true);
+    try {
+      const data = await createSession(email);
+      navigate(`/setup/${data.session_id}`, { state: { email } });
+    } catch (err) {
+      console.error('Failed to create new session', err);
+      navigate('/');
+    } finally {
+      setIsRestarting(false);
+    }
+  };
 
   return (
     <div className="page-center">
@@ -21,7 +42,15 @@ export default function EndPage() {
         <p className="end-note">
           📬 Check your inbox (and spam folder) within the next few minutes.
         </p>
-
+        
+        <button 
+          className="btn-primary" 
+          onClick={handleRestart} 
+          disabled={isRestarting}
+          style={{ marginTop: '2rem' }}
+        >
+          {isRestarting ? 'Restarting...' : 'Restart Interview'}
+        </button>
       </div>
     </div>
   );

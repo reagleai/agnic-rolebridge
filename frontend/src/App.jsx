@@ -2,7 +2,7 @@
  * RoleBridge App Router.
  * Block D — overwrites Block A shell with full routing.
  */
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ThemeToggle from './components/ThemeToggle';
 import LandingPage from './components/LandingPage';
 import SetupPage from './components/SetupPage';
@@ -15,9 +15,12 @@ export default function App() {
       <ThemeToggle />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/setup" element={<Navigate to="/" replace />} />
         <Route path="/setup/:id" element={<SetupPage />} />
+        <Route path="/interview" element={<Navigate to="/" replace />} />
         <Route path="/interview/:id" element={<InterviewPage />} />
         <Route path="/complete" element={<EndPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
