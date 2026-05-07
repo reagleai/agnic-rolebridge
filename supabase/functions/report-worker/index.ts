@@ -99,20 +99,20 @@ function serializeTranscript(transcript: Array<Record<string, unknown>>): string
 }
 
 function renderDimension(label: string, d: DimensionScore): string {
-  const flagColor = d.flag === "pass" ? "#34d399" : d.flag === "soft_flag" ? "#fbbf24" : "#f87171";
+  const flagColor = d.flag === "pass" ? "#00E5A0" : d.flag === "soft_flag" ? "#FBBF24" : "#EF4444";
   const flagLabel = d.flag === "pass" ? "Pass" : d.flag === "soft_flag" ? "Needs Work" : "Critical";
   return `
     <tr>
-      <td style="padding:12px 16px;border-bottom:1px solid #2a2a3a;font-weight:600;color:#e8e8ef;width:200px;">
+      <td style="padding:12px 16px;border-bottom:1px solid #2A344A;font-weight:600;color:#E2E8F0;width:200px;">
         ${label}
         <br><span style="font-size:12px;font-weight:400;color:${flagColor};">● ${flagLabel}</span>
       </td>
-      <td style="padding:12px 16px;border-bottom:1px solid #2a2a3a;text-align:center;font-size:20px;font-weight:700;color:#6366f1;width:80px;">
+      <td style="padding:12px 16px;border-bottom:1px solid #2A344A;text-align:center;font-size:20px;font-weight:700;color:#00E5A0;width:80px;">
         ${d.score}/10
       </td>
-      <td style="padding:12px 16px;border-bottom:1px solid #2a2a3a;color:#8888a0;">
+      <td style="padding:12px 16px;border-bottom:1px solid #2A344A;color:#94A3B8;line-height:1.5;">
         ${d.why}
-        ${d.transcript_evidence ? `<br><span style="display:inline-block;margin-top:6px;padding:4px 8px;background:#1a1a26;border-left:3px solid #6366f1;font-style:italic;font-size:13px;color:#8888a0;">"${d.transcript_evidence}"</span>` : ""}
+        ${d.transcript_evidence ? `<br><span style="display:inline-block;margin-top:6px;padding:6px 10px;background:rgba(0, 229, 160, 0.05);border-left:3px solid #00E5A0;font-style:italic;font-size:13px;color:#94A3B8;">"${d.transcript_evidence}"</span>` : ""}
       </td>
     </tr>`;
 }
@@ -124,31 +124,31 @@ function buildReportHTML(report: ReportData, job: ReportJob): string {
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#0a0a0f;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e8e8ef;">
+<body style="margin:0;padding:0;background:#0B0F19;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#E2E8F0;">
   <div style="max-width:640px;margin:0 auto;padding:32px 16px;">
 
     <!-- Header -->
     <div style="text-align:center;margin-bottom:32px;">
-      <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#22d3ee);color:#fff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:100px;text-transform:uppercase;letter-spacing:0.05em;">Interview Report</div>
-      <h1 style="font-size:24px;font-weight:700;margin:12px 0 4px;color:#e8e8ef;">RoleBridge Evaluation</h1>
-      <p style="color:#8888a0;font-size:14px;margin:0;">Section: ${job.section_name || "General"}</p>
+      <div style="display:inline-block;background:rgba(0, 229, 160, 0.12);border:1px solid rgba(0, 229, 160, 0.2);color:#33FFB8;font-size:12px;font-weight:600;padding:4px 12px;border-radius:100px;text-transform:uppercase;letter-spacing:0.05em;">Interview Report</div>
+      <h1 style="font-size:24px;font-weight:700;margin:16px 0 4px;color:#E2E8F0;">RoleBridge Evaluation</h1>
+      <p style="color:#94A3B8;font-size:14px;margin:0;">Section: ${job.section_name || "General"}</p>
     </div>
 
     <!-- Summary -->
-    <div style="background:#12121a;border:1px solid #2a2a3a;border-radius:12px;padding:20px;margin-bottom:24px;">
-      <h2 style="font-size:16px;font-weight:600;margin:0 0 8px;color:#22d3ee;">Summary</h2>
-      <p style="color:#8888a0;font-size:14px;line-height:1.6;margin:0;">${report.opening_summary}</p>
+    <div style="background:#131A2A;border:1px solid #2A344A;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <h2 style="font-size:16px;font-weight:600;margin:0 0 8px;color:#00E5A0;">Summary</h2>
+      <p style="color:#94A3B8;font-size:14px;line-height:1.6;margin:0;">${report.opening_summary}</p>
     </div>
 
     <!-- Overall Score -->
-    <div style="background:#12121a;border:1px solid #2a2a3a;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
-      <div style="font-size:48px;font-weight:700;color:#6366f1;">${overall.score}/10</div>
-      <p style="color:#8888a0;font-size:14px;margin:4px 0 0;">Overall Score</p>
+    <div style="background:#131A2A;border:1px solid #2A344A;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:48px;font-weight:700;color:#00E5A0;">${overall.score}/10</div>
+      <p style="color:#94A3B8;font-size:14px;margin:4px 0 0;">Overall Score</p>
     </div>
 
     <!-- Dimensions -->
-    <div style="background:#12121a;border:1px solid #2a2a3a;border-radius:12px;overflow:hidden;margin-bottom:24px;">
-      <div style="padding:16px 16px 8px;"><h2 style="font-size:16px;font-weight:600;margin:0;color:#22d3ee;">Dimension Scores</h2></div>
+    <div style="background:#131A2A;border:1px solid #2A344A;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <div style="padding:16px 16px 8px;"><h2 style="font-size:16px;font-weight:600;margin:0;color:#00E5A0;">Dimension Scores</h2></div>
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         ${renderDimension("Clarity", dims.clarity)}
         ${renderDimension("Evidence", dims.evidence)}
@@ -160,23 +160,23 @@ function buildReportHTML(report: ReportData, job: ReportJob): string {
     </div>
 
     <!-- Strengths & Weaknesses -->
-    <div style="background:#12121a;border:1px solid #2a2a3a;border-radius:12px;padding:20px;margin-bottom:24px;">
-      <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#22d3ee;">Strengths</h2>
-      <ul style="padding-left:20px;margin:0 0 16px;color:#34d399;font-size:14px;">
-        ${(overall.strengths || []).map((s: string) => `<li style="margin-bottom:4px;">${s}</li>`).join("")}
+    <div style="background:#131A2A;border:1px solid #2A344A;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#00E5A0;">Strengths</h2>
+      <ul style="padding-left:20px;margin:0 0 16px;color:#33FFB8;font-size:14px;">
+        ${(overall.strengths || []).map((s: string) => `<li style="margin-bottom:6px;">${s}</li>`).join("")}
       </ul>
-      <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#22d3ee;">Areas for Improvement</h2>
-      <ul style="padding-left:20px;margin:0 0 16px;color:#fbbf24;font-size:14px;">
-        ${(overall.weaknesses || []).map((w: string) => `<li style="margin-bottom:4px;">${w}</li>`).join("")}
+      <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#00E5A0;">Areas for Improvement</h2>
+      <ul style="padding-left:20px;margin:0 0 16px;color:#FBBF24;font-size:14px;">
+        ${(overall.weaknesses || []).map((w: string) => `<li style="margin-bottom:6px;">${w}</li>`).join("")}
       </ul>
-      <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#22d3ee;">Key Points to Improve</h2>
-      <ul style="padding-left:20px;margin:0;color:#8888a0;font-size:14px;">
-        ${(overall.points_to_improve || []).map((p: string) => `<li style="margin-bottom:4px;">${p}</li>`).join("")}
+      <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#00E5A0;">Key Points to Improve</h2>
+      <ul style="padding-left:20px;margin:0;color:#94A3B8;font-size:14px;line-height:1.5;">
+        ${(overall.points_to_improve || []).map((p: string) => `<li style="margin-bottom:6px;">${p}</li>`).join("")}
       </ul>
     </div>
 
     <!-- Footer -->
-    <div style="text-align:center;padding:16px;color:#8888a0;font-size:12px;">
+    <div style="text-align:center;padding:16px;color:#64748B;font-size:12px;">
       <p style="margin:0;">Generated by RoleBridge • AI Interview Simulator</p>
       <p style="margin:4px 0 0;">This report is based on AI evaluation and should be used as guidance, not definitive assessment.</p>
     </div>
