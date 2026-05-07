@@ -12,11 +12,11 @@ export const corsHeaders: Record<string, string> = {
 
 /**
  * Handle CORS preflight (OPTIONS) requests.
- * Returns a 204 Response for OPTIONS, or null for real requests.
+ * Returns a 200 Response for OPTIONS, or null for real requests.
  */
 export function handleCors(req: Request): Response | null {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders, status: 204 });
+    return new Response("ok", { headers: corsHeaders, status: 200 });
   }
   return null;
 }
