@@ -304,7 +304,10 @@ export default function LandingPage() {
 
       {/* ─── Footer ─── */}
       <footer className="landing-footer">
-        RoleBridge - Interview pressure-testing for career-transition candidates.
+        <div style={{ marginBottom: '0.5rem' }}>RoleBridge - Interview pressure-testing for career-transition candidates.</div>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+          Built by Ajay Sharma · <a href="https://www.linkedin.com/in/workwithajay/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>LinkedIn</a>
+        </div>
       </footer>
 
     </div>
