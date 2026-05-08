@@ -31,7 +31,8 @@ export default function EndPage() {
   };
 
   return (
-    <div className="page-center">
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100vh' }}>
+      <div className="page-center" style={{ flex: 1, minHeight: 'auto' }}>
       <div className="card end-card">
         <div className="end-icon" style={{ display: 'flex', justifyContent: 'center', color: 'var(--color-primary)' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '64px', height: '64px' }}>
@@ -44,12 +45,12 @@ export default function EndPage() {
           Your evaluation report is being generated and will be sent to{' '}
           <strong>{email}</strong>.
         </p>
-        <p className="end-note" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px', flexShrink: 0 }}>
+        <p className="end-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '6px', position: 'relative', top: '-1px' }}>
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
-          <span>Check your inbox (and spam folder) within the next few minutes.</span>
+          Check your inbox (and spam folder) within the next few minutes.
         </p>
         
         <button 
@@ -61,8 +62,12 @@ export default function EndPage() {
           {isRestarting ? 'Restarting...' : 'Restart Interview'}
         </button>
       </div>
-      <footer style={{ textAlign: 'center', padding: '2rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-        Built by Ajay Sharma · <a href="https://www.linkedin.com/in/workwithajay/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>LinkedIn</a>
+      </div>
+      <footer className="landing-footer" style={{ marginTop: 'auto' }}>
+        <div style={{ marginBottom: '0.5rem' }}>RoleBridge - Interview pressure-testing for career-transition candidates.</div>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+          Built by Ajay Sharma · <a href="https://www.linkedin.com/in/workwithajay/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>LinkedIn</a>
+        </div>
       </footer>
     </div>
   );
