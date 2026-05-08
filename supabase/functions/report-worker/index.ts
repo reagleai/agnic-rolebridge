@@ -1,6 +1,6 @@
 /**
- * POST /report-worker — Cron-triggered: claim pending report job, generate, email.
- * Block E — supabase/functions/report-worker/index.ts
+ * POST /report-worker - Cron-triggered: claim pending report job, generate, email.
+ * Block E - supabase/functions/report-worker/index.ts
  *
  * Flow:
  * 1. Claim oldest pending job (FOR UPDATE SKIP LOCKED)
@@ -227,7 +227,7 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (claimError || !claimed) {
-      // Another worker claimed it — try cleanup and return idle
+      // Another worker claimed it - try cleanup and return idle
       await runCleanup(db);
       return jsonResponse({ status: "idle" }, 200);
     }
@@ -263,7 +263,7 @@ Deno.serve(async (req: Request) => {
     // ── Step 4: Send email via Resend ──
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) {
-      console.error("Missing RESEND_API_KEY — skipping email send");
+      console.error("Missing RESEND_API_KEY - skipping email send");
       // Still mark as done to avoid infinite retries in dev
       await db
         .from("report_queue")
@@ -273,7 +273,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({
         status: "processed",
         session_id: job.session_id,
-        warning: "RESEND_API_KEY not set — email not sent",
+        warning: "RESEND_API_KEY not set - email not sent",
       }, 200);
     }
 

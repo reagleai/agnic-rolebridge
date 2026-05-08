@@ -1,6 +1,6 @@
 /**
- * POST /sessions/:id/end — Atomic session termination + report queue handoff.
- * Block E — supabase/functions/session-end/index.ts
+ * POST /sessions/:id/end - Atomic session termination + report queue handoff.
+ * Block E - supabase/functions/session-end/index.ts
  *
  * Uses an atomic CTE to:
  * 1. Lock the session row (FOR UPDATE)
@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
 
     // ── Execute atomic CTE via raw SQL ──
     // The CTE:
-    // 1. Selects the session if status IN ('active', 'setup') — with FOR UPDATE lock
+    // 1. Selects the session if status IN ('active', 'setup') - with FOR UPDATE lock
     // 2. Updates it to 'ended', returning prior_status
     // 3. Inserts into report_queue ONLY if prior_status was 'active'
     // 4. Deletes the session row
@@ -101,7 +101,7 @@ Deno.serve(async (req: Request) => {
 
       if (queueError) {
         console.error("Failed to insert report_queue:", queueError);
-        // Don't block — the session is already ended
+        // Don't block - the session is already ended
       }
     }
 

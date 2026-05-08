@@ -1,6 +1,6 @@
 /**
  * 60-second answer countdown timer.
- * Block D — frontend/src/hooks/useAnswerTimer.js
+ * Block D - frontend/src/hooks/useAnswerTimer.js
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 

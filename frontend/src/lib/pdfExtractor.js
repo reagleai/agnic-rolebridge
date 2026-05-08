@@ -1,6 +1,6 @@
 /**
  * PDF text extraction using pdf.js.
- * Block D — frontend/src/lib/pdfExtractor.js
+ * Block D - frontend/src/lib/pdfExtractor.js
  */
 import * as pdfjsLib from 'pdfjs-dist';
 

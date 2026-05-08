@@ -1,13 +1,13 @@
 /**
- * POST /sessions/:id/answers — Submit answer, evaluate, determine next action.
- * Block C — supabase/functions/session-answers/index.ts
+ * POST /sessions/:id/answers - Submit answer, evaluate, determine next action.
+ * Block C - supabase/functions/session-answers/index.ts
  *
  * Core interview engine:
  * 1. Validate inputs + session state
  * 2. LLM-evaluate the answer (6 rubric dimensions)
  * 3. Apply hard-rule overrides (total cap, followup depth, core exhaustion)
  * 4. Build transcript turns (answer + optional next question)
- * 5. Persist to DB — CRITICAL: branch SQL by next_action to avoid null::jsonb
+ * 5. Persist to DB - CRITICAL: branch SQL by next_action to avoid null::jsonb
  * 6. Return next_action + next_question + session_stats
  */
 
@@ -50,21 +50,21 @@ interface EvalResult {
 
 const ANSWER_EVAL_SYSTEM = `You are an interview answer evaluator. You assess candidate responses on 6 dimensions:
 
-1. clarity — Was the answer clear and well-structured?
-2. evidence — Did the candidate provide specific examples or data?
-3. ownership — Did the candidate demonstrate personal ownership of outcomes?
-4. role_language — Did the candidate use language relevant to the target role?
-5. relevance — Was the answer relevant to the question asked?
-6. coherence — Was the answer internally consistent and logical?
+1. clarity - Was the answer clear and well-structured?
+2. evidence - Did the candidate provide specific examples or data?
+3. ownership - Did the candidate demonstrate personal ownership of outcomes?
+4. role_language - Did the candidate use language relevant to the target role?
+5. relevance - Was the answer relevant to the question asked?
+6. coherence - Was the answer internally consistent and logical?
 
 For each dimension, assign a flag: "pass", "soft_flag", or "hard_flag".
 
 Then determine:
-- needs_followup: boolean — true if the answer needs deeper probing
-- followup_reason: string — why a followup is needed (or empty)
-- next_action: "followup" | "next_question" — your recommendation (backend may override)
+- needs_followup: boolean - true if the answer needs deeper probing
+- followup_reason: string - why a followup is needed (or empty)
+- next_action: "followup" | "next_question" - your recommendation (backend may override)
 - followup_question: { "id": "f_<6 random chars>", "text": "<followup question>" } | null
-- eval_notes: string — brief evaluator notes
+- eval_notes: string - brief evaluator notes
 
 Return ONLY valid JSON. No markdown fences. Format:
 {
@@ -343,7 +343,7 @@ Deno.serve(async (req: Request) => {
     }
     // end_session: nextQuestion and questionTurn stay null
 
-    // ── Database update — CRITICAL: branch by action ──
+    // ── Database update - CRITICAL: branch by action ──
     if (finalAction === "end_session" || !questionTurn) {
       // Append ONLY the answer turn. Do NOT append null.
       const { error: upErr } = await db

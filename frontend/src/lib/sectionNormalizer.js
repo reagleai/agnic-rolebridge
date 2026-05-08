@@ -1,6 +1,6 @@
 /**
- * Section name normalization — mirrors backend validation.ts whitelist.
- * Block D — frontend/src/lib/sectionNormalizer.js
+ * Section name normalization - mirrors backend validation.ts whitelist.
+ * Block D - frontend/src/lib/sectionNormalizer.js
  */
 
 export const SECTION_OPTIONS = [

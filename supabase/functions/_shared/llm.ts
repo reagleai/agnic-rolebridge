@@ -1,9 +1,9 @@
 /**
  * Configurable LLM adapter for Supabase Edge Functions.
- * Block A — _shared/llm.ts
+ * Block A - _shared/llm.ts
  *
  * Uses OpenRouter's OpenAI-compatible API. Model selection is
- * driven by env vars with sensible defaults — no model name is
+ * driven by env vars with sensible defaults - no model name is
  * hardcoded in any downstream task logic.
  */
 

@@ -1,6 +1,6 @@
 /**
  * 8-minute (480s) session countdown timer.
- * Block D — frontend/src/hooks/useSessionTimer.js
+ * Block D - frontend/src/hooks/useSessionTimer.js
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 

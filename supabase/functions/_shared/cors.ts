@@ -1,6 +1,6 @@
 /**
  * CORS headers helper for Supabase Edge Functions.
- * Block A — _shared/cors.ts
+ * Block A - _shared/cors.ts
  */
 
 export const corsHeaders: Record<string, string> = {

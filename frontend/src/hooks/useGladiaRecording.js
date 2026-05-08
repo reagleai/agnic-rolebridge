@@ -1,6 +1,6 @@
 /**
  * Gladia WebSocket recording hook.
- * Block D — frontend/src/hooks/useGladiaRecording.js
+ * Block D - frontend/src/hooks/useGladiaRecording.js
  *
  * Manages mic capture → AudioContext (16kHz) → PCM conversion → WebSocket streaming.
  * Returns live partial/final transcripts for UI rendering.
@@ -141,7 +141,7 @@ export default function useGladiaRecording() {
           }
         }
       } catch {
-        // Non-JSON or malformed — ignore
+        // Non-JSON or malformed - ignore
       }
     };
 

@@ -1,6 +1,6 @@
 /**
  * Supabase admin client factory for Edge Functions.
- * Block A — _shared/db.ts
+ * Block A - _shared/db.ts
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -9,7 +9,7 @@ let _client: SupabaseClient | null = null;
 
 /**
  * Returns a Supabase admin client using the service role key.
- * Caches the client instance — safe to call multiple times.
+ * Caches the client instance - safe to call multiple times.
  */
 export function getSupabaseClient(): SupabaseClient {
   if (_client) return _client;

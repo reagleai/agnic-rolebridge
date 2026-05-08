@@ -1,6 +1,6 @@
 /**
- * POST /sessions/:id/setup — Store resume/JD, extract section, generate questions.
- * Block B — supabase/functions/session-setup/index.ts
+ * POST /sessions/:id/setup - Store resume/JD, extract section, generate questions.
+ * Block B - supabase/functions/session-setup/index.ts
  */
 
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
@@ -28,7 +28,7 @@ Your job is to generate 2 to 3 interview questions that:
 1. Are directly grounded in a specific claim or experience in the resume section.
 2. Test whether the candidate can translate that experience into terms relevant to the target role.
 3. Are open-ended and structured so a strong answer takes under 60 seconds.
-4. Probe ownership, evidence, and role relevance — not just description.
+4. Probe ownership, evidence, and role relevance - not just description.
 
 Return ONLY valid JSON. No explanation. No markdown fences. Format:
 {"questions": [
@@ -151,7 +151,7 @@ Deno.serve(async (req: Request) => {
       if (errStr.includes("llm_rate_limited")) {
         return jsonResponse({ error: "llm_rate_limited" }, 429);
       }
-      // Don't mislead the user — this is an LLM/network error, not a missing section
+      // Don't mislead the user - this is an LLM/network error, not a missing section
       return jsonResponse(
         {
           error: "llm_error",

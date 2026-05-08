@@ -1,4 +1,4 @@
--- RoleBridge V1 — Initial Schema
+-- RoleBridge V1 - Initial Schema
 -- Block B: sessions + report_queue + indexes
 
 CREATE TABLE sessions (

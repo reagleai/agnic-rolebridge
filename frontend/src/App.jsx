@@ -1,6 +1,6 @@
 /**
  * RoleBridge App Router.
- * Block D — overwrites Block A shell with full routing.
+ * Block D - overwrites Block A shell with full routing.
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';

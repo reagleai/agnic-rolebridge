@@ -1,6 +1,6 @@
 # Design System Migration: Dynamic Resume Refiner → RoleBridge
 
-## Audit Summary — Source Project (Dynamic Resume Refiner)
+## Audit Summary - Source Project (Dynamic Resume Refiner)
 
 ### Token System (`tokens.css`)
 | Token Category | Values |
@@ -8,7 +8,7 @@
 | **Surfaces** | `--color-bg: #0B1215` · `--color-surface: #111D1A` · `--color-surface-2: #162520` · `--color-surface-offset: #162520` · `--color-surface-dynamic: #1e3329` |
 | **Primary accent** | `--color-primary: #3ECC90` · `--color-primary-hover: #5EDDA8` · `--color-primary-active: #2dad7a` · `--color-primary-highlight: rgba(62,204,144,0.08)` |
 | **Text** | `--color-text: #E8ECE9` · `--color-text-muted: #6B8078` · `--color-text-faint: #4a5e55` |
-| **Borders/Dividers** | `rgba(62,204,144,0.15)` — accent-tinted, not neutral white |
+| **Borders/Dividers** | `rgba(62,204,144,0.15)` - accent-tinted, not neutral white |
 | **Radius** | `--radius-sm: 8px` · `--radius-lg/xl: 16px` · `--radius-full: 999px` |
 | **Shadows** | Dark: glow-based `0 0 20px rgba(62,204,144,0.12)` · Light: elevation-based |
 | **Transitions** | `--transition-fast: 0.2s ease` · `--transition-interactive: 0.3s ease` · `--transition-slow: 0.5s ease` |
@@ -19,7 +19,7 @@
 ### Color Token Naming Convention
 The **source uses `--color-*` naming** (`--color-bg`, `--color-surface`, `--color-primary`, `--color-text`, `--color-border`, `--color-divider`, etc.)
 
-The **target uses `--bg-*`, `--accent`, `--text-*`, `--border-*` naming** — these are **different token names** referencing the same conceptual palette.
+The **target uses `--bg-*`, `--accent`, `--text-*`, `--border-*` naming** - these are **different token names** referencing the same conceptual palette.
 
 ### Navbar (TopBar + LandingNav)
 - `position: sticky/fixed`, `height: 72px`, `padding: 0 var(--space-6)`
@@ -58,8 +58,8 @@ The **target uses `--bg-*`, `--accent`, `--text-*`, `--border-*` naming** — th
 - Body base color: `var(--color-text)` on `body`
 
 ### Animations / Motion
-- `pageIn`: `opacity 0 → 1`, `translateY(30px → 0)` — page entrance
-- `cardIn`: `opacity 0 → 1`, `translateY(8px → 0)` — card entrance
+- `pageIn`: `opacity 0 → 1`, `translateY(30px → 0)` - page entrance
+- `cardIn`: `opacity 0 → 1`, `translateY(8px → 0)` - card entrance
 - `shimmer`: skeleton loading, 1.5s infinite
 - `pulse-dot`: 3-dot loader, scale+opacity
 - `toast-in/out`: translate + scale
@@ -98,7 +98,7 @@ The target uses different CSS variable names but same palette values. The migrat
 
 ### Structural Changes
 - **App.jsx**: Add `data-theme` attribute at root; move ThemeToggle from floating position into a proper nav bar
-- **Navbar**: Build a proper `<Navbar>` component matching the source's TopBar/LandingNav pattern — fixed, `72px`, logo-box + wordmark + theme toggle. Replace the floating `ThemeToggle` with this navbar.
+- **Navbar**: Build a proper `<Navbar>` component matching the source's TopBar/LandingNav pattern - fixed, `72px`, logo-box + wordmark + theme toggle. Replace the floating `ThemeToggle` with this navbar.
 - **CSS**: Completely rewrite `index.css` to use source token names + source component classes exactly. Preserve all RoleBridge-specific component classes (interview, timer, voice, etc.) but migrate them to source tokens.
 - **Component JSX**: No structural logic changes. Class names and inline styles updated to use the canonical `--color-*` token names.
 
@@ -108,11 +108,11 @@ The target uses different CSS variable names but same palette values. The migrat
 
 ### 1. `frontend/index.html`
 #### [MODIFY] index.html
-- Add font imports (Clash Display via fontshare, Satoshi via fontshare, JetBrains Mono via Google Fonts) — already present in `index.css`, move to HTML `<head>` for best performance
+- Add font imports (Clash Display via fontshare, Satoshi via fontshare, JetBrains Mono via Google Fonts) - already present in `index.css`, move to HTML `<head>` for best performance
 
 ---
 
-### 2. CSS — `frontend/src/index.css`
+### 2. CSS - `frontend/src/index.css`
 #### [MODIFY] index.css
 Complete rewrite. This is the primary file. Changes:
 - Replace all `--bg-*`, `--accent*`, `--text-*`, `--border-*` tokens with canonical `--color-*` source names
@@ -128,7 +128,7 @@ Complete rewrite. This is the primary file. Changes:
 
 ---
 
-### 3. App Shell — `frontend/src/App.jsx`
+### 3. App Shell - `frontend/src/App.jsx`
 #### [MODIFY] App.jsx
 - Add a `<Navbar>` component wrapping all routes (fixed topbar with RoleBridge logo-box + theme toggle)
 - Apply `data-theme` to the root `<div>` (instead of floating `ThemeToggle`)
@@ -136,7 +136,7 @@ Complete rewrite. This is the primary file. Changes:
 
 ---
 
-### 4. New Component — `frontend/src/components/Navbar.jsx`
+### 4. New Component - `frontend/src/components/Navbar.jsx`
 #### [NEW] Navbar.jsx
 - Replicates source `LandingNav`/`TopBar` pattern exactly:
   - `position: fixed`, `height: 72px`, `padding: 0 24px`
@@ -149,17 +149,17 @@ Complete rewrite. This is the primary file. Changes:
 
 ### 5. Update ThemeToggle.jsx
 #### [MODIFY] ThemeToggle.jsx
-- Move theme toggle logic into Navbar — ThemeToggle.jsx can be simplified or removed (Navbar owns it)
+- Move theme toggle logic into Navbar - ThemeToggle.jsx can be simplified or removed (Navbar owns it)
 
 ---
 
-### 6. Component Class Updates — LandingPage.jsx, SetupPage.jsx, InterviewPage.jsx, EndPage.jsx
+### 6. Component Class Updates - LandingPage.jsx, SetupPage.jsx, InterviewPage.jsx, EndPage.jsx
 #### [MODIFY] All page components
 Class names remain the same (`.card`, `.btn-primary`, `.form-input`, etc.) because the CSS rewrite maps these to source tokens. However:
 - `.btn-primary` in CSS will be updated to use `--color-primary` (not `--accent`)
 - `.form-input` will use `--color-surface` (not `--bg-surface-elevated`)
 - Cards will use `--color-surface`, `--color-divider`
-- No JSX structural changes required — only CSS changes propagate automatically
+- No JSX structural changes required - only CSS changes propagate automatically
 
 ---
 
@@ -168,7 +168,7 @@ Class names remain the same (`.card`, `.btn-primary`, `.form-input`, etc.) becau
 1. **No Sidebar/MobileTabBar**: RoleBridge is a multi-page flow (Landing → Setup → Interview → Complete), not a sidebar-nav app. The source's sidebar and mobile tab bar are not applicable. Only the Navbar (topbar) pattern is replicated.
 2. **No Lucide Icons**: RoleBridge uses plain JSX (no lucide-react). The Navbar theme toggle will use inline SVG (same icons, already present in ThemeToggle.jsx) instead of `<Sun>` / `<Moon>` from lucide.
 3. **Content max-width**: Source landing uses `--content-wide: 1200px`. RoleBridge landing is intentionally narrow (720px/560px) for a focused product flow. The section widths will be **preserved** (not widened) since this is a product constraint.
-4. **`body` overflow**: Source sets `body { overflow: hidden }` with only `<main>` scrolling (sidebar app shell). RoleBridge is a full-page scroll app — `overflow: hidden` on body will NOT be applied.
+4. **`body` overflow**: Source sets `body { overflow: hidden }` with only `<main>` scrolling (sidebar app shell). RoleBridge is a full-page scroll app - `overflow: hidden` on body will NOT be applied.
 
 ---
 

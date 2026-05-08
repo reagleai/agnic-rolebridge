@@ -1,4 +1,4 @@
--- RoleBridge V1 — Enable Row Level Security (RLS)
+-- RoleBridge V1 - Enable Row Level Security (RLS)
 -- Block G: Security setup
 -- This fixes the Supabase Advisor warnings about RLS being disabled.
 

@@ -1,6 +1,6 @@
 /**
- * Landing page — full product-led page with email CTA.
- * Block D — frontend/src/components/LandingPage.jsx
+ * Landing page - full product-led page with email CTA.
+ * Block D - frontend/src/components/LandingPage.jsx
  *
  * Preserves the exact email → createSession → navigate(/setup/:id) flow.
  */
@@ -68,8 +68,8 @@ export default function LandingPage() {
         </h1>
 
         <p className="landing-hero__subhead">
-          Most career changers lose offers not in screening — but when an interviewer pushes back on their story.
-          RoleBridge takes your resume and target role, then applies follow-up pressure on the section that matters most — so you know exactly where your story breaks before it costs you.
+          Most career changers lose offers not in screening - but when an interviewer pushes back on their story.
+          RoleBridge takes your resume and target role, then applies follow-up pressure on the section that matters most - so you know exactly where your story breaks before it costs you.
         </p>
 
         <form onSubmit={handleSubmit} className="landing-hero__form">
@@ -107,8 +107,8 @@ export default function LandingPage() {
         <h2 className="landing-section__heading">The real failure mode</h2>
         <p className="landing-problem__intro">
           Your resume is strong enough to get you shortlisted. But when the
-          interviewer starts probing — asking for specifics, testing ownership,
-          pushing for evidence — your answers get vague. The problem isn't your
+          interviewer starts probing - asking for specifics, testing ownership,
+          pushing for evidence - your answers get vague. The problem isn't your
           experience. It's that you haven't pressure-tested how you explain it.
         </p>
 
@@ -138,7 +138,7 @@ export default function LandingPage() {
       <section className="landing-section">
         <h2 className="landing-section__heading">What this actually does</h2>
         <p className="landing-section__subheading">
-          A focused interview simulation grounded in your real background — not generic coaching.
+          A focused interview simulation grounded in your real background - not generic coaching.
         </p>
 
         <div className="landing-feature-list">
@@ -167,7 +167,7 @@ export default function LandingPage() {
             <div className="landing-feature-item__content">
               <span className="landing-feature-item__title">Follow-up pressure on weak answers</span>
               <span className="landing-feature-item__desc">
-                Vague or surface-level answers trigger probing follow-ups — the same way a real interviewer would push.
+                Vague or surface-level answers trigger probing follow-ups - the same way a real interviewer would push.
               </span>
             </div>
           </div>
@@ -280,7 +280,7 @@ export default function LandingPage() {
 
       {/* ─── Footer ─── */}
       <footer className="landing-footer">
-        RoleBridge — Interview pressure-testing for career-transition candidates.
+        RoleBridge - Interview pressure-testing for career-transition candidates.
       </footer>
 
     </div>

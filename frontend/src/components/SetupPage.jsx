@@ -1,6 +1,6 @@
 /**
- * Setup page — PDF upload, JD entry, section selection.
- * Block D — frontend/src/components/SetupPage.jsx
+ * Setup page - PDF upload, JD entry, section selection.
+ * Block D - frontend/src/components/SetupPage.jsx
  */
 import { useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';

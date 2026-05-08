@@ -1,4 +1,4 @@
--- RoleBridge V1 — Cron Setup
+-- RoleBridge V1 - Cron Setup
 -- Block F: pg_cron + pg_net jobs
 -- PREREQUISITES:
 --   1. Enable pg_cron extension in Supabase dashboard (Database → Extensions)

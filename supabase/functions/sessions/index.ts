@@ -1,6 +1,6 @@
 /**
- * POST /sessions — Create a new interview session.
- * Block B — supabase/functions/sessions/index.ts
+ * POST /sessions - Create a new interview session.
+ * Block B - supabase/functions/sessions/index.ts
  */
 
 import { corsHeaders, handleCors } from "../_shared/cors.ts";

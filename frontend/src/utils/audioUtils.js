@@ -1,6 +1,6 @@
 /**
  * Audio conversion: Float32 → Int16 PCM for Gladia WebSocket.
- * Block D — frontend/src/utils/audioUtils.js
+ * Block D - frontend/src/utils/audioUtils.js
  */
 
 export function convertFloat32ToInt16(float32Array) {

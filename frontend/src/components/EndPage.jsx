@@ -1,6 +1,6 @@
 /**
- * End page — session complete, report pending message.
- * Block D — frontend/src/components/EndPage.jsx
+ * End page - session complete, report pending message.
+ * Block D - frontend/src/components/EndPage.jsx
  */
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';

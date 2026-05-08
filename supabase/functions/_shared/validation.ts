@@ -1,6 +1,6 @@
 /**
  * Shared validation utilities for Edge Functions.
- * Block A — _shared/validation.ts
+ * Block A - _shared/validation.ts
  */
 
 // ── UUID v4 pattern ──

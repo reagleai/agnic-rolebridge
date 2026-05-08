@@ -1,6 +1,6 @@
 /**
- * GET /sessions/:id/stt-session — Initialize a Gladia live STT session.
- * Block C — supabase/functions/stt-session/index.ts
+ * GET /sessions/:id/stt-session - Initialize a Gladia live STT session.
+ * Block C - supabase/functions/stt-session/index.ts
  *
  * Calls Gladia server-side so the API key never reaches the browser.
  * Returns a self-authenticating WebSocket URL for the frontend to connect directly.

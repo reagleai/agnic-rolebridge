@@ -1,6 +1,6 @@
 /**
- * GET /sessions/:id — Rehydrate frontend state after page refresh.
- * Block B — supabase/functions/session-get/index.ts
+ * GET /sessions/:id - Rehydrate frontend state after page refresh.
+ * Block B - supabase/functions/session-get/index.ts
  */
 
 import { corsHeaders, handleCors } from "../_shared/cors.ts";

@@ -1,6 +1,6 @@
 /**
  * RoleBridge API client.
- * Block A — frontend/src/lib/api.js
+ * Block A - frontend/src/lib/api.js
  *
  * All backend calls route through Supabase Edge Functions.
  * Base URL and anon key are read from Vite build-time env vars.
@@ -36,7 +36,7 @@ async function request(path, options = {}) {
 
 // ── Endpoint wrappers ──
 
-/** POST /sessions — create a new session */
+/** POST /sessions - create a new session */
 export function createSession(email) {
   return request("/sessions", {
     method: "POST",
@@ -44,7 +44,7 @@ export function createSession(email) {
   });
 }
 
-/** POST /sessions/:id/setup — store resume/JD, generate questions */
+/** POST /sessions/:id/setup - store resume/JD, generate questions */
 export function setupSession(id, { resume_text, jd_text, section_name }) {
   return request(`/session-setup/${id}`, {
     method: "POST",
@@ -52,17 +52,17 @@ export function setupSession(id, { resume_text, jd_text, section_name }) {
   });
 }
 
-/** GET /sessions/:id — rehydrate session state */
+/** GET /sessions/:id - rehydrate session state */
 export function getSession(id) {
   return request(`/session-get/${id}`, { method: "GET" });
 }
 
-/** GET /sessions/:id/stt-session — get Gladia WebSocket URL */
+/** GET /sessions/:id/stt-session - get Gladia WebSocket URL */
 export function getSttSession(id) {
   return request(`/stt-session/${id}`, { method: "GET" });
 }
 
-/** POST /sessions/:id/answers — submit answer, get next action */
+/** POST /sessions/:id/answers - submit answer, get next action */
 export function submitAnswer(id, payload) {
   return request(`/session-answers/${id}`, {
     method: "POST",
@@ -70,7 +70,7 @@ export function submitAnswer(id, payload) {
   });
 }
 
-/** POST /sessions/:id/end — end session, queue report */
+/** POST /sessions/:id/end - end session, queue report */
 export function endSession(id) {
   return request(`/session-end/${id}`, { method: "POST" });
 }

@@ -1,6 +1,6 @@
 /**
- * Interview page — live Q&A with voice/text, timers, progression.
- * Block D — frontend/src/components/InterviewPage.jsx
+ * Interview page - live Q&A with voice/text, timers, progression.
+ * Block D - frontend/src/components/InterviewPage.jsx
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -48,7 +48,7 @@ export default function InterviewPage() {
     try {
       await endSession(id);
     } catch {
-      // Best-effort — backend cron will clean up anyway
+      // Best-effort - backend cron will clean up anyway
     }
     navigate('/complete', { state: { email, sessionId: id } });
   }, [id, email, navigate, sessionEnded]);
@@ -115,7 +115,7 @@ export default function InterviewPage() {
       if (text.length >= 10) {
         doSubmit(text, 'voice', 60);
       } else {
-        // Too short — switch to text mode
+        // Too short - switch to text mode
         setInputMode('text');
         setTextAnswer(text);
       }
@@ -186,7 +186,7 @@ export default function InterviewPage() {
       gladia.startRecording(data.ws_url);
       answerTimer.startTimer();
     } catch (err) {
-      // Gladia failed — fall back to text
+      // Gladia failed - fall back to text
       console.error('STT session init failed:', err);
       setInputMode('text');
       setSubmitError('Voice recording unavailable. Please type your answer.');
@@ -204,7 +204,7 @@ export default function InterviewPage() {
       setSubmitError('Your answer was too short. Please try again or type your answer.');
       setInputMode('text');
       setTextAnswer(text);
-      // Don't stop the answer timer — let them type
+      // Don't stop the answer timer - let them type
     }
   };
 
