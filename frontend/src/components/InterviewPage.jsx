@@ -22,18 +22,16 @@ export default function InterviewPage() {
   const email = location.state?.email || '';
 
   // ── State ──
-  const [currentQuestion, setCurrentQuestion] = useState(
-    location.state?.firstQuestion || null
-  );
+  // Always fetch current question from backend to handle page refreshes correctly.
+  // location.state.firstQuestion may be stale after a browser refresh.
+  const [currentQuestion, setCurrentQuestion] = useState(null);
   const [inputMode, setInputMode] = useState('voice'); // voice | text
   const [textAnswer, setTextAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [isRehydrating, setIsRehydrating] = useState(!location.state?.firstQuestion);
+  const [isRehydrating, setIsRehydrating] = useState(true);
   const [sessionEnded, setSessionEnded] = useState(false);
-  const [totalCore, setTotalCore] = useState(
-    location.state?.firstQuestion?.total_core || 0
-  );
+  const [totalCore, setTotalCore] = useState(0);
   const [questionsAsked, setQuestionsAsked] = useState(0);
 
   const submittingRef = useRef(false);
@@ -56,23 +54,8 @@ export default function InterviewPage() {
   const sessionTimer = useSessionTimer(triggerEnd);
   const answerTimer = useAnswerTimer(null); // onExpire set dynamically
 
-  // ── Rehydration (page refresh recovery) ──
+  // ── Always fetch session state from backend on mount ──
   useEffect(() => {
-    if (!isRehydrating) {
-      // Start session timer from state
-      const expiresAt = location.state?.sessionExpiresAt;
-      if (expiresAt) {
-        const remaining = Math.max(
-          0,
-          Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
-        );
-        sessionTimer.startTimer(Math.min(remaining, 480));
-      } else {
-        sessionTimer.startTimer(480);
-      }
-      return;
-    }
-
     let cancelled = false;
     (async () => {
       try {

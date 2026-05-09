@@ -85,8 +85,11 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ status: "already_ended" }, 200);
     }
 
-    // Step C: Queue report ONLY for active sessions with data
-    if (priorStatus === "active") {
+    // Step C: Queue report ONLY for active sessions that have at least one answer
+    const transcript = (session.transcript as Array<Record<string, unknown>>) || [];
+    const hasAnswers = transcript.some((t) => t.type === "answer");
+
+    if (priorStatus === "active" && hasAnswers) {
       const { error: queueError } = await db
         .from("report_queue")
         .insert({
@@ -116,9 +119,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Response ──
-    if (priorStatus === "setup") {
+    if (priorStatus === "setup" || (priorStatus === "active" && !hasAnswers)) {
       return jsonResponse(
-        { status: "abandoned", message: "Session ended before interview started. No report will be generated." },
+        { status: "abandoned", message: "Session ended before any answers were submitted. No report will be generated." },
         200
       );
     }
