@@ -132,6 +132,27 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Fire-and-forget: invoke report-worker immediately so the user
+    // doesn't wait up to 60s for the cron to pick it up.
+    // The cron remains as a safety net for retries/failures.
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+      if (supabaseUrl && serviceKey) {
+        fetch(`${supabaseUrl}/functions/v1/report-worker`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: "{}",
+          signal: AbortSignal.timeout(55_000),
+        }).catch((err) => console.warn("Fire-and-forget report-worker invoke failed (cron will retry):", err));
+      }
+    } catch {
+      // Non-blocking — cron will pick it up
+    }
+
     return jsonResponse(
       { status: "processing", message: "Your report is being generated and will be sent to your email." },
       202
