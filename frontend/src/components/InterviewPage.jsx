@@ -9,6 +9,8 @@ import useGladiaRecording from '../hooks/useGladiaRecording';
 import useSessionTimer from '../hooks/useSessionTimer';
 import useAnswerTimer from '../hooks/useAnswerTimer';
 
+const USE_STT_RELAY = import.meta.env.VITE_USE_STT_RELAY !== 'false';
+
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -36,6 +38,7 @@ export default function InterviewPage() {
 
   const submittingRef = useRef(false);
   const sessionIdRef = useRef(id);
+  const retryTimeoutRef = useRef(null);
 
   // ── Hooks ──
   const gladia = useGladiaRecording();
@@ -43,13 +46,14 @@ export default function InterviewPage() {
   const triggerEnd = useCallback(async () => {
     if (sessionEnded) return;
     setSessionEnded(true);
+    gladia.teardownVoiceSession('session_end');
     try {
       await endSession(id);
     } catch {
       // Best-effort - backend cron will clean up anyway
     }
     navigate('/complete', { state: { email, sessionId: id } });
-  }, [id, email, navigate, sessionEnded]);
+  }, [id, email, navigate, sessionEnded, gladia.teardownVoiceSession]);
 
   const sessionTimer = useSessionTimer(triggerEnd);
   const answerTimer = useAnswerTimer(null); // onExpire set dynamically
@@ -65,12 +69,12 @@ export default function InterviewPage() {
         setTotalCore(data.total_core || 0);
         setQuestionsAsked(data.total_questions || 0);
 
-        const remaining = Math.max(
-          0,
-          Math.floor(
-            (new Date(data.session_expires_at).getTime() - Date.now()) / 1000
-          )
-        );
+        const sessionStartMs = data.session_start ? new Date(data.session_start).getTime() : 0;
+        const expiresAtMs = data.session_expires_at ? new Date(data.session_expires_at).getTime() : 0;
+        const remaining = sessionStartMs
+          ? Math.max(0, 480 - Math.floor((Date.now() - sessionStartMs) / 1000))
+          : Math.max(0, Math.floor((expiresAtMs - Date.now()) / 1000));
+        // Fix: macOS_Safari_Audit_2026 unexpected finding - refresh must preserve the 8-minute interview clock.
         sessionTimer.startTimer(Math.min(remaining, 480));
       } catch (err) {
         if (!cancelled) {
@@ -93,10 +97,15 @@ export default function InterviewPage() {
 
     // If voice mode, stop recording and use the returned transcript
     if (inputMode === 'voice') {
-      const result = await gladia.stopRecording?.();
+      let result = null;
+      try {
+        result = await gladia.stopRecording?.();
+      } catch {
+        gladia.teardownVoiceSession('auto_submit_stop_failed');
+      }
       const text = result?.transcript || '';
       if (text.length >= 10) {
-        doSubmit(text, 'voice', 60);
+        doSubmit(text, 'voice', result?.elapsed || 60);
       } else {
         // Too short - switch to text mode
         setInputMode('text');
@@ -113,8 +122,14 @@ export default function InterviewPage() {
 
   // Update answer timer's onExpire ref
   useEffect(() => {
-    answerTimer.stopTimer();
+    answerTimer.setOnExpire(handleAutoSubmit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleAutoSubmit]);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
   }, []);
 
   // ── Submit answer ──
@@ -147,7 +162,7 @@ export default function InterviewPage() {
     } catch (err) {
       if (err.status === 429) {
         setSubmitError('Service is busy. Retrying in 4 seconds…');
-        setTimeout(() => {
+        retryTimeoutRef.current = setTimeout(() => {
           submittingRef.current = false;
           setIsSubmitting(false);
           doSubmit(text, type, durationSec);
@@ -165,12 +180,35 @@ export default function InterviewPage() {
   const handleStartRecording = async () => {
     setSubmitError('');
     try {
+      const audioReady = await gladia.prepareAudioContext();
+      if (!audioReady) {
+        setInputMode('text');
+        setSubmitError('Voice recording unavailable. Please type your answer.');
+        answerTimer.startTimer();
+        return;
+      }
+
       const data = await getSttSession(id);
-      gladia.startRecording(data.ws_url);
+      const wsUrl = USE_STT_RELAY && data.relay_ws_url ? data.relay_ws_url : data.ws_url;
+      let started = await gladia.startRecording(wsUrl, {
+        useRelay: USE_STT_RELAY && Boolean(data.relay_ws_url),
+      });
+      if (!started && USE_STT_RELAY && data.ws_url) {
+        // Fix: Ghost Recording P0 rollout safety - preserve current direct Gladia path as relay rollback.
+        gladia.setError(null);
+        started = await gladia.startRecording(data.ws_url, { useRelay: false });
+      }
+      if (!started) {
+        setInputMode('text');
+        setSubmitError('Voice recording unavailable. Please type your answer.');
+        answerTimer.startTimer();
+        return;
+      }
       answerTimer.startTimer();
     } catch (err) {
       // Gladia failed - fall back to text
       console.error('STT session init failed:', err);
+      gladia.teardownVoiceSession('stt_session_init_failed');
       setInputMode('text');
       setSubmitError('Voice recording unavailable. Please type your answer.');
       answerTimer.startTimer();
@@ -178,7 +216,12 @@ export default function InterviewPage() {
   };
 
   const handleStopRecording = async () => {
-    const result = await gladia.stopRecording();
+    let result = null;
+    try {
+      result = await gladia.stopRecording();
+    } catch {
+      gladia.teardownVoiceSession('manual_stop_failed');
+    }
     const text = result?.transcript || '';
     const elapsed = result?.elapsed || 10;
     if (text.length >= 10) {
@@ -201,31 +244,44 @@ export default function InterviewPage() {
 
   // ── Switch to text on mic errors ──
   useEffect(() => {
-    if (gladia.error && ['mic_denied', 'ws_failed', 'ws_error', 'audio_failed'].includes(gladia.error)) {
+    if (gladia.error && ['mic_denied', 'mic_unavailable', 'ws_failed', 'ws_error', 'audio_failed', 'audio_unsupported'].includes(gladia.error)) {
       setInputMode('text');
-      if (gladia.error === 'mic_denied') {
-        setSubmitError('Microphone access denied. Please type your answer instead.');
+      if (['mic_denied', 'mic_unavailable'].includes(gladia.error)) {
+        setSubmitError('Microphone access unavailable. Please type your answer instead.');
       } else {
         setSubmitError('Voice recording failed. Please type your answer instead.');
       }
     }
   }, [gladia.error]);
 
-  // ── beforeunload ──
+  // ── Page lifecycle voice teardown ──
   useEffect(() => {
-    const handler = () => {
-      const url = `${import.meta.env.VITE_SUPABASE_URL || ''}/functions/v1/session-end/${id}`;
-      const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-      navigator.sendBeacon?.(url) ||
-        fetch(url, {
-          method: 'POST',
-          keepalive: true,
-          headers: key ? { Authorization: `Bearer ${key}` } : {},
-        });
+    const stopVoice = () => {
+      if (gladia.isRecording) {
+        // Fix: Ghost Recording P0 - stop backend/Gladia recording before browser lifecycle teardown.
+        gladia.teardownVoiceSession('page_lifecycle_hidden');
+      }
     };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [id]);
+    const pageHideHandler = (event) => {
+      if (event.persisted) return;
+      stopVoice();
+    };
+    const visibilityHandler = () => {
+      if (document.visibilityState === 'hidden' && gladia.isRecording) {
+        stopVoice();
+        setInputMode('text');
+        setSubmitError('Recording stopped because the page was hidden. Please continue by typing.');
+      }
+    };
+    window.addEventListener('pagehide', pageHideHandler);
+    window.addEventListener('beforeunload', stopVoice);
+    document.addEventListener('visibilitychange', visibilityHandler);
+    return () => {
+      window.removeEventListener('pagehide', pageHideHandler);
+      window.removeEventListener('beforeunload', stopVoice);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+    };
+  }, [gladia.isRecording, gladia.teardownVoiceSession]);
 
   // ── Render ──
   if (isRehydrating) {
@@ -300,7 +356,9 @@ export default function InterviewPage() {
                 className={`mode-btn ${inputMode === 'text' ? 'active' : ''}`}
                 onClick={() => {
                   setInputMode('text');
-                  if (gladia.isRecording) gladia.stopRecording();
+                  if (gladia.isRecording) {
+                    gladia.stopRecording().catch(() => gladia.teardownVoiceSession('switch_to_text_failed'));
+                  }
                 }}
               >
                 ⌨ Type

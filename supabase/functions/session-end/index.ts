@@ -2,14 +2,8 @@
  * POST /sessions/:id/end - Atomic session termination + report queue handoff.
  * Block E - supabase/functions/session-end/index.ts
  *
- * Uses an atomic CTE to:
- * 1. Lock the session row (FOR UPDATE)
- * 2. Set status = 'ended'
- * 3. Conditionally insert into report_queue (only if prior_status was 'active')
- * 4. Delete the session row
- *
- * Idempotent: repeat calls on the same session return 'already_ended'.
- * Concurrent-safe: FOR UPDATE ensures only one call wins.
+ * Uses the end_session_atomic Postgres RPC so status changes, report queueing,
+ * recording cleanup metadata, and session deletion happen in one DB transaction.
  */
 
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
@@ -23,6 +17,78 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
+async function fallbackEndSession(
+  db: ReturnType<typeof getSupabaseClient>,
+  sessionId: string
+): Promise<Response> {
+  console.warn("Falling back to non-atomic session end. Apply migration 004_recording_sessions_and_atomic_end.sql.");
+
+  const { data: session, error: fetchError } = await db
+    .from("sessions")
+    .select("id, status, email, section_name, section_text, jd_text, transcript, core_questions")
+    .eq("id", sessionId)
+    .in("status", ["active", "setup"])
+    .single();
+
+  if (fetchError || !session) {
+    return jsonResponse({ status: "already_ended" }, 200);
+  }
+
+  const { data: updated, error: updateError } = await db
+    .from("sessions")
+    .update({ status: "ended" })
+    .eq("id", sessionId)
+    .in("status", ["active", "setup"])
+    .select("id")
+    .single();
+
+  if (updateError || !updated) {
+    return jsonResponse({ status: "already_ended" }, 200);
+  }
+
+  const transcript = (session.transcript as Array<Record<string, unknown>>) || [];
+  const hasAnswers = transcript.some((t) => t.type === "answer");
+
+  if (session.status === "active" && hasAnswers) {
+    const { error: queueError } = await db
+      .from("report_queue")
+      .insert({
+        session_id: session.id,
+        email: session.email,
+        section_name: session.section_name,
+        section_text: session.section_text,
+        jd_text: session.jd_text,
+        transcript: session.transcript,
+        core_questions: session.core_questions,
+      });
+
+    if (queueError) {
+      console.error("Fallback report queue insert failed:", queueError);
+    }
+  }
+
+  const { error: deleteError } = await db
+    .from("sessions")
+    .delete()
+    .eq("id", sessionId);
+
+  if (deleteError) {
+    console.error("Fallback session delete failed:", deleteError);
+  }
+
+  if (session.status === "setup" || !hasAnswers) {
+    return jsonResponse(
+      { status: "abandoned", message: "Session ended before any answers were submitted. No report will be generated." },
+      200
+    );
+  }
+
+  return jsonResponse(
+    { status: "processing", message: "Your report is being generated and will be sent to your email." },
+    202
+  );
+}
+
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -32,94 +98,34 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ── Extract session ID ──
     let sessionId: string;
     try {
       sessionId = extractSessionId(req.url);
-    } catch (e: unknown) {
-      const err = e as { status?: number; error?: string };
-      // Non-existent session → treat as already ended (idempotent)
+    } catch {
       return jsonResponse({ status: "already_ended" }, 200);
     }
 
     const db = getSupabaseClient();
 
-    // ── Execute atomic CTE via raw SQL ──
-    // The CTE:
-    // 1. Selects the session if status IN ('active', 'setup') - with FOR UPDATE lock
-    // 2. Updates it to 'ended', returning prior_status
-    // 3. Inserts into report_queue ONLY if prior_status was 'active'
-    // 4. Deletes the session row
-    //
-    // Since supabase-js doesn't support raw CTEs with RETURNING across multiple steps,
-    // we use a two-step approach within a transaction-like pattern:
-    // Step A: Fetch and lock the session
-    // Step B: Conditionally queue + delete
+    const { data, error } = await db.rpc("end_session_atomic", {
+      p_session_id: sessionId,
+    });
 
-    // Step A: Fetch the session to determine prior_status
-    const { data: session, error: fetchError } = await db
-      .from("sessions")
-      .select("id, status, email, section_name, section_text, jd_text, transcript, core_questions")
-      .eq("id", sessionId)
-      .in("status", ["active", "setup"])
-      .single();
-
-    if (fetchError || !session) {
-      // Session doesn't exist or already ended → idempotent
-      return jsonResponse({ status: "already_ended" }, 200);
-    }
-
-    const priorStatus = session.status;
-
-    // Step B: Set status to 'ended' (guard against race)
-    const { data: updated, error: updateError } = await db
-      .from("sessions")
-      .update({ status: "ended" })
-      .eq("id", sessionId)
-      .in("status", ["active", "setup"])
-      .select("id")
-      .single();
-
-    if (updateError || !updated) {
-      // Race condition: another call won → idempotent
-      return jsonResponse({ status: "already_ended" }, 200);
-    }
-
-    // Step C: Queue report ONLY for active sessions that have at least one answer
-    const transcript = (session.transcript as Array<Record<string, unknown>>) || [];
-    const hasAnswers = transcript.some((t) => t.type === "answer");
-
-    if (priorStatus === "active" && hasAnswers) {
-      const { error: queueError } = await db
-        .from("report_queue")
-        .insert({
-          session_id: session.id,
-          email: session.email,
-          section_name: session.section_name,
-          section_text: session.section_text,
-          jd_text: session.jd_text,
-          transcript: session.transcript,
-          core_questions: session.core_questions,
-        });
-
-      if (queueError) {
-        console.error("Failed to insert report_queue:", queueError);
-        // Don't block - the session is already ended
+    if (error) {
+      console.error("end_session_atomic RPC failed:", error);
+      if (error.code === "PGRST202" || error.message?.includes("end_session_atomic")) {
+        return await fallbackEndSession(db, sessionId);
       }
+      return jsonResponse({ error: "db_error", message: error.message }, 500);
     }
 
-    // Step D: Delete the session row
-    const { error: deleteError } = await db
-      .from("sessions")
-      .delete()
-      .eq("id", sessionId);
+    const result = Array.isArray(data) ? data[0] : null;
 
-    if (deleteError) {
-      console.error("Failed to delete session:", deleteError);
+    if (!result) {
+      return jsonResponse({ status: "already_ended" }, 200);
     }
 
-    // ── Response ──
-    if (priorStatus === "setup" || (priorStatus === "active" && !hasAnswers)) {
+    if (result.prior_status === "setup" || !result.has_answers) {
       return jsonResponse(
         { status: "abandoned", message: "Session ended before any answers were submitted. No report will be generated." },
         200

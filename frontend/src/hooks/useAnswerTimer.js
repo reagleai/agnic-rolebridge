@@ -9,7 +9,12 @@ export default function useAnswerTimer(onExpire) {
   const [isExpired, setIsExpired] = useState(false);
   const intervalRef = useRef(null);
   const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+
+  useEffect(() => {
+    if (typeof onExpire === 'function') {
+      onExpireRef.current = onExpire;
+    }
+  }, [onExpire]);
 
   const startTimer = useCallback(() => {
     setTimeRemaining(60);
@@ -29,7 +34,14 @@ export default function useAnswerTimer(onExpire) {
   }, []);
 
   const stopTimer = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  const setOnExpire = useCallback((handler) => {
+    onExpireRef.current = handler;
   }, []);
 
   const resetTimer = useCallback(() => {
@@ -44,5 +56,5 @@ export default function useAnswerTimer(onExpire) {
     };
   }, []);
 
-  return { timeRemaining, isExpired, startTimer, resetTimer, stopTimer };
+  return { timeRemaining, isExpired, startTimer, resetTimer, stopTimer, setOnExpire };
 }

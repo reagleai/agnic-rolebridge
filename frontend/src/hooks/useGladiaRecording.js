@@ -2,15 +2,18 @@
  * Gladia WebSocket recording hook.
  * Block D - frontend/src/hooks/useGladiaRecording.js
  *
- * Manages mic capture → AudioContext (16kHz) → PCM conversion → WebSocket streaming.
- * Returns live partial/final transcripts for UI rendering.
- *
- * FIX: Uses a ref to track transcript text so stopRecording can return the
- * actual accumulated text (avoids stale React state closure).
- * FIX: Gladia V2 uses `msg.data.is_final` NOT `msg.data.utterance.is_final`.
+ * Manages mic capture -> AudioContext -> 16kHz PCM conversion -> WebSocket streaming.
+ * The WebSocket can be either the current direct Gladia URL or the safer backend relay URL.
  */
-import { useState, useRef, useCallback } from 'react';
-import { convertFloat32ToInt16 } from '../utils/audioUtils';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { convertFloat32ToInt16, downsampleBuffer, TARGET_SAMPLE_RATE } from '../utils/audioUtils';
+
+const HEARTBEAT_MS = 15000;
+const FINAL_WAIT_MS = 2000;
+
+function getAudioContextCtor() {
+  return window.AudioContext || window.webkitAudioContext;
+}
 
 export default function useGladiaRecording() {
   const [isRecording, setIsRecording] = useState(false);
@@ -20,189 +23,335 @@ export default function useGladiaRecording() {
 
   const wsRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const sourceRef = useRef(null);
   const processorRef = useRef(null);
   const streamRef = useRef(null);
+  const heartbeatRef = useRef(null);
   const startTimeRef = useRef(null);
-
-  // ── Ref that always holds the latest accumulated transcript ──
   const transcriptRef = useRef('');
+  const isRecordingRef = useRef(false);
+  const stopResolverRef = useRef(null);
+  const stopTimeoutRef = useRef(null);
 
-  const cleanup = useCallback(() => {
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
+  const clearHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
     }
-    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (wsRef.current) {
-      try { wsRef.current.close(); } catch {}
-      wsRef.current = null;
-    }
-    setIsRecording(false);
   }, []);
 
-  const startRecording = useCallback(async (wsUrl) => {
+  const clearStopWait = useCallback(() => {
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+  }, []);
+
+  const resolveStop = useCallback((elapsed) => {
+    if (!stopResolverRef.current) return;
+    const resolve = stopResolverRef.current;
+    stopResolverRef.current = null;
+    clearStopWait();
+    resolve({
+      elapsed,
+      transcript: transcriptRef.current,
+    });
+  }, [clearStopWait]);
+
+  const sendStopSignal = useCallback((reason = 'client_stop') => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    try {
+      // Fix: macOS_Safari_Audit_2026 + Ghost Recording P0 - notify the active STT socket before teardown.
+      ws.send(JSON.stringify({ type: 'stop_recording', reason }));
+    } catch (err) {
+      console.warn('Failed to send stop_recording:', err);
+    }
+  }, []);
+
+  const cleanupMedia = useCallback(() => {
+    if (processorRef.current) {
+      try {
+        processorRef.current.onaudioprocess = null;
+        processorRef.current.disconnect();
+      } catch {}
+      processorRef.current = null;
+    }
+
+    if (sourceRef.current) {
+      try { sourceRef.current.disconnect(); } catch {}
+      sourceRef.current = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      audioCtxRef.current.close().catch(() => {});
+    }
+    audioCtxRef.current = null;
+  }, []);
+
+  const cleanupSocket = useCallback(() => {
+    const ws = wsRef.current;
+    if (!ws) return;
+    ws.onopen = null;
+    ws.onmessage = null;
+    ws.onerror = null;
+    ws.onclose = null;
+    try {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    } catch {}
+    wsRef.current = null;
+  }, []);
+
+  const teardownVoiceSession = useCallback((reason = 'client_teardown') => {
+    sendStopSignal(reason);
+    clearHeartbeat();
+    cleanupMedia();
+    cleanupSocket();
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    resolveStop(
+      startTimeRef.current
+        ? Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
+        : 1
+    );
+  }, [cleanupMedia, cleanupSocket, clearHeartbeat, resolveStop, sendStopSignal]);
+
+  const failRecording = useCallback((code, reason = code) => {
+    teardownVoiceSession(reason);
+    setError(code);
+  }, [teardownVoiceSession]);
+
+  const prepareAudioContext = useCallback(async () => {
+    const AudioContextCtor = getAudioContextCtor();
+    if (!AudioContextCtor) {
+      setError('audio_unsupported');
+      return false;
+    }
+
+    try {
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        audioCtxRef.current = new AudioContextCtor();
+      }
+
+      if (audioCtxRef.current.state === 'suspended') {
+        // Fix: macOS_Safari_Audit_2026 - call resume from the user-triggered start path.
+        await audioCtxRef.current.resume();
+      }
+
+      return true;
+    } catch (err) {
+      console.error('AudioContext preparation failed:', err);
+      setError('audio_failed');
+      return false;
+    }
+  }, []);
+
+  const handleTranscriptMessage = useCallback((evt) => {
+    let msg;
+    try {
+      msg = JSON.parse(evt.data);
+    } catch {
+      return;
+    }
+
+    if (msg.type === 'relay_error') {
+      failRecording('ws_error', msg.error || 'relay_error');
+      return;
+    }
+
+    if (msg.type === 'transcript' && msg.data?.utterance) {
+      const text = msg.data.utterance.text || '';
+      const isFinal = msg.data.is_final ?? msg.data.utterance.is_final ?? false;
+
+      if (isFinal) {
+        transcriptRef.current = transcriptRef.current
+          ? `${transcriptRef.current} ${text}`.trim()
+          : text;
+        setFinalTranscript(transcriptRef.current);
+        setInterimText('');
+        resolveStop(
+          startTimeRef.current
+            ? Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
+            : 1
+        );
+      } else {
+        setInterimText(text);
+      }
+    }
+  }, [failRecording, resolveStop]);
+
+  const startRecording = useCallback(async (wsUrl, options = {}) => {
+    const { useRelay = false } = options;
+
     setError(null);
     setFinalTranscript('');
     setInterimText('');
     transcriptRef.current = '';
-
     if (!wsUrl) {
       setError('no_ws_url');
-      return;
+      return false;
     }
 
-    // ── Request mic access ──
+    if (isRecordingRef.current || wsRef.current || streamRef.current) {
+      teardownVoiceSession('restart_recording');
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      // Fix: Phase 4B - browsers without getUserMedia must fail cleanly and not desync UI state.
+      teardownVoiceSession('get_user_media_unavailable');
+      setError('mic_unavailable');
+      return false;
+    }
+
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
-      console.error('Mic access denied:', err);
-      setError('mic_denied');
-      return;
+      console.error('Mic access failed:', err);
+      teardownVoiceSession('mic_access_failed');
+      setError(err?.name === 'NotFoundError' ? 'mic_unavailable' : 'mic_denied');
+      return false;
     }
     streamRef.current = stream;
 
-    // ── WebSocket to Gladia ──
     let ws;
     try {
       ws = new WebSocket(wsUrl);
     } catch (err) {
       console.error('WebSocket init failed:', err);
-      cleanup();
+      teardownVoiceSession('ws_init_failed');
       setError('ws_failed');
-      return;
+      return false;
     }
     wsRef.current = ws;
 
-    ws.onopen = () => {
-      setIsRecording(true);
-      startTimeRef.current = Date.now();
+    return await new Promise((resolve) => {
+      let startSettled = false;
+      const settleStart = (value) => {
+        if (startSettled) return;
+        startSettled = true;
+        resolve(value);
+      };
 
-      // ── Audio pipeline: mic → 16kHz context → ScriptProcessor → PCM → WS ──
-      try {
-        const audioCtx = new AudioContext({ sampleRate: 16000 });
-        audioCtxRef.current = audioCtx;
+      const failStart = (code, reason) => {
+        failRecording(code, reason);
+        settleStart(false);
+      };
 
-        const source = audioCtx.createMediaStreamSource(stream);
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-        processorRef.current = processor;
+      ws.onopen = async () => {
+        try {
+          const AudioContextCtor = getAudioContextCtor();
+          if (!AudioContextCtor) {
+            failStart('audio_unsupported', 'audio_context_unavailable');
+            return;
+          }
 
-        processor.onaudioprocess = (e) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            const float32 = e.inputBuffer.getChannelData(0);
-            const int16 = convertFloat32ToInt16(float32);
+          const audioCtx = audioCtxRef.current && audioCtxRef.current.state !== 'closed'
+            ? audioCtxRef.current
+            : new AudioContextCtor();
+          audioCtxRef.current = audioCtx;
+
+          if (audioCtx.state === 'suspended') {
+            // Fix: macOS_Safari_Audit_2026 - resume Safari/iOS AudioContext after user-triggered start.
+            await audioCtx.resume();
+          }
+
+          const source = audioCtx.createMediaStreamSource(stream);
+          const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+          sourceRef.current = source;
+          processorRef.current = processor;
+
+          processor.onaudioprocess = (e) => {
+            if (ws.readyState !== WebSocket.OPEN) return;
+            const input = e.inputBuffer.getChannelData(0);
+            // Fix: macOS_Safari_Audit_2026 - Safari ignores AudioContext({ sampleRate: 16000 }).
+            const resampled = downsampleBuffer(input, audioCtx.sampleRate, TARGET_SAMPLE_RATE);
+            const int16 = convertFloat32ToInt16(resampled);
             ws.send(int16.buffer);
+          };
+
+          source.connect(processor);
+          processor.connect(audioCtx.destination);
+
+          if (useRelay) {
+            heartbeatRef.current = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'heartbeat', sent_at: new Date().toISOString() }));
+              }
+            }, HEARTBEAT_MS);
           }
-        };
 
-        source.connect(processor);
-        processor.connect(audioCtx.destination);
-      } catch (err) {
-        console.error('Audio pipeline error:', err);
-        cleanup();
-        setError('audio_failed');
-      }
-    };
-
-    // ── Gladia V2 message format ──
-    // {
-    //   "type": "transcript",
-    //   "data": {
-    //     "id": "...",
-    //     "is_final": true|false,          <-- at data level, NOT inside utterance
-    //     "utterance": { "text": "...", ... }
-    //   }
-    // }
-    ws.onmessage = (evt) => {
-      try {
-        const msg = JSON.parse(evt.data);
-        console.log('[Gladia WS]', msg.type, msg);
-
-        if (msg.type === 'transcript' && msg.data?.utterance) {
-          const text = msg.data.utterance.text || '';
-          // Gladia V2: is_final lives on msg.data, not msg.data.utterance
-          const isFinal = msg.data.is_final ?? msg.data.utterance.is_final ?? false;
-
-          if (isFinal) {
-            transcriptRef.current = transcriptRef.current
-              ? transcriptRef.current + ' ' + text
-              : text;
-            setFinalTranscript(transcriptRef.current);
-            setInterimText('');
-          } else {
-            setInterimText(text);
-          }
+          isRecordingRef.current = true;
+          setIsRecording(true);
+          startTimeRef.current = Date.now();
+          settleStart(true);
+        } catch (err) {
+          console.error('Audio pipeline error:', err);
+          failStart('audio_failed', 'audio_pipeline_failed');
         }
-      } catch {
-        // Non-JSON or malformed - ignore
-      }
-    };
+      };
 
-    ws.onerror = () => {
-      console.error('Gladia WebSocket error');
-      cleanup();
-      setError('ws_error');
-    };
+      ws.onmessage = handleTranscriptMessage;
 
-    ws.onclose = () => {
-      setIsRecording(false);
-    };
-  }, [cleanup]);
+      ws.onerror = () => {
+        console.error('Gladia WebSocket error');
+        failStart('ws_error', 'ws_error');
+      };
 
-  /**
-   * Stop recording and return { elapsed, transcript }.
-   * Uses transcriptRef to avoid stale closure issues.
-   */
-  const stopRecording = useCallback(() => {
-    return new Promise((resolve) => {
-      const elapsed = startTimeRef.current
-        ? Math.round((Date.now() - startTimeRef.current) / 1000)
-        : 1;
-
-      // Tell Gladia to finalize
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'stop_recording' }));
-      }
-
-      // Wait up to 2 seconds for a final transcript, then clean up
-      const timeout = setTimeout(() => {
-        const text = transcriptRef.current;
-        cleanup();
-        resolve({ elapsed, transcript: text });
-      }, 2000);
-
-      // If we get a final before timeout, clean up early
-      if (wsRef.current) {
-        const origOnMessage = wsRef.current.onmessage;
-        wsRef.current.onmessage = (evt) => {
-          if (origOnMessage) origOnMessage(evt);
-          try {
-            const msg = JSON.parse(evt.data);
-            const isFinal = msg.data?.is_final ?? msg.data?.utterance?.is_final ?? false;
-            if (msg.type === 'transcript' && isFinal) {
-              clearTimeout(timeout);
-              setTimeout(() => {
-                const text = transcriptRef.current;
-                cleanup();
-                resolve({ elapsed, transcript: text });
-              }, 200);
-            }
-          } catch {}
-        };
-      }
+      ws.onclose = () => {
+        clearHeartbeat();
+        cleanupMedia();
+        isRecordingRef.current = false;
+        setIsRecording(false);
+        settleStart(false);
+        resolveStop(
+          startTimeRef.current
+            ? Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
+            : 1
+        );
+      };
     });
-  }, [cleanup]);
+  }, [cleanupMedia, clearHeartbeat, failRecording, handleTranscriptMessage, resolveStop, teardownVoiceSession]);
+
+  const stopRecording = useCallback(() => {
+    const elapsed = startTimeRef.current
+      ? Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
+      : 1;
+
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      teardownVoiceSession('stop_without_open_socket');
+      return Promise.resolve({ elapsed, transcript: transcriptRef.current });
+    }
+
+    sendStopSignal('client_stop');
+
+    return new Promise((resolve) => {
+      stopResolverRef.current = (result) => {
+        resolve(result);
+        setTimeout(() => teardownVoiceSession('stop_complete'), 200);
+      };
+      stopTimeoutRef.current = setTimeout(() => {
+        teardownVoiceSession('final_transcript_timeout');
+      }, FINAL_WAIT_MS);
+    });
+  }, [sendStopSignal, teardownVoiceSession]);
+
+  useEffect(() => {
+    return () => teardownVoiceSession('component_unmount');
+  }, [teardownVoiceSession]);
 
   return {
     startRecording,
     stopRecording,
+    prepareAudioContext,
+    teardownVoiceSession,
     finalTranscript,
     interimText,
     isRecording,

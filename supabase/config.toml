@@ -425,5 +425,8 @@ verify_jwt = false
 [functions.stt-session]
 verify_jwt = false
 
+[functions.stt-relay]
+verify_jwt = false
+
 [functions.report-worker]
 verify_jwt = false

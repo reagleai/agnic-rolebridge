@@ -22,7 +22,13 @@ async function request(path, options = {}) {
   };
 
   const res = await fetch(url, { ...options, headers });
-  const data = await res.json();
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Fix: Phase 4C - failed/empty API responses should not throw a masking JSON parse error.
+    data = {};
+  }
 
   if (!res.ok) {
     const err = new Error(data.error || `request_failed_${res.status}`);

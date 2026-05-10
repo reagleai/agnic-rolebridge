@@ -17,6 +17,17 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
+function getMaxRecordingMs(): number {
+  const parsed = Number.parseInt(Deno.env.get("MAX_RECORDING_DURATION_MS") || "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 600000;
+}
+
+function getRelayWsUrl(reqUrl: string, recordingSessionId: string): string {
+  const url = new URL(reqUrl);
+  const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${url.host}/functions/v1/stt-relay/${recordingSessionId}`;
+}
+
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -107,7 +118,40 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "gladia_session_failed", message: "Invalid STT response" }, 502);
     }
 
-    return jsonResponse({ ws_url: wsUrl, gladia_session_id: gladiaSessionId || "" }, 200);
+    const maxRecordingMs = getMaxRecordingMs();
+
+    const { data: recordingSession, error: recordingInsertError } = await db
+      .from("recording_sessions")
+      .insert({
+        session_id: sessionId,
+        gladia_session_id: gladiaSessionId || "",
+        gladia_ws_url: wsUrl,
+        status: "created",
+        max_duration_ms: maxRecordingMs,
+        last_heartbeat_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (recordingInsertError || !recordingSession) {
+      console.error("Recording session insert failed:", recordingInsertError);
+      // Fix: relay rollout safety - keep the current direct Gladia path working if tracking is unavailable.
+      return jsonResponse({
+        ws_url: wsUrl,
+        relay_ws_url: "",
+        recording_session_id: "",
+        gladia_session_id: gladiaSessionId || "",
+        max_recording_duration_ms: maxRecordingMs,
+      }, 200);
+    }
+
+    return jsonResponse({
+      ws_url: wsUrl,
+      relay_ws_url: getRelayWsUrl(req.url, recordingSession.id),
+      recording_session_id: recordingSession.id,
+      gladia_session_id: gladiaSessionId || "",
+      max_recording_duration_ms: maxRecordingMs,
+    }, 200);
   } catch (err) {
     console.error("Unexpected error in stt-session:", err);
     return jsonResponse({ error: "gladia_session_failed", message: String(err) }, 502);
