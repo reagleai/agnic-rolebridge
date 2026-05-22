@@ -85,6 +85,13 @@ serve(async (req) => {
     }
 
     const tokens = await tokenRes.json();
+    console.log("[v2-auth-callback] Token response keys:", Object.keys(tokens));
+    console.log("[v2-auth-callback] Token response (redacted):", JSON.stringify({
+      ...tokens,
+      access_token: tokens.access_token ? tokens.access_token.substring(0, 20) + "..." : undefined,
+      refresh_token: tokens.refresh_token ? "[REDACTED]" : undefined,
+    }));
+
     const accessToken: string = tokens.access_token;
     const refreshToken: string | undefined = tokens.refresh_token;
     const expiresIn: number | undefined = tokens.expires_in;
@@ -97,59 +104,122 @@ serve(async (req) => {
       );
     }
 
-    // ── Fetch user info from Agnic ──
+    // ── Extract user info from multiple sources ──
     let agnicEmail = "";
     let agnicUserId = "";
     let balanceValue: number | null = null;
-    let walletAddress = "";
 
-    // 1. Try to parse the access token as a JWT to get 'sub' or 'email'
-    let jwtPayload: any = {};
-    try {
-      const parts = accessToken.split('.');
-      if (parts.length === 3) {
-        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4 !== 0) base64 += '=';
-        const jsonStr = atob(base64);
-        jwtPayload = JSON.parse(jsonStr);
-        console.log("Parsed JWT Payload:", JSON.stringify(jwtPayload));
+    // Source 1: Check if the token response itself contains email/user info
+    if (tokens.email) agnicEmail = tokens.email;
+    if (tokens.user_id) agnicUserId = tokens.user_id;
+    if (tokens.userId) agnicUserId = tokens.userId;
+
+    // Source 2: Try to decode JWT access token (if it's a JWT)
+    if (!agnicEmail && accessToken.includes(".")) {
+      try {
+        const parts = accessToken.split(".");
+        if (parts.length === 3) {
+          // Decode the payload (second part)
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+          console.log("[v2-auth-callback] JWT payload keys:", Object.keys(payload));
+          if (payload.email) agnicEmail = payload.email;
+          if (payload.sub) agnicUserId = payload.sub;
+          if (payload.user_id) agnicUserId = payload.user_id;
+        }
+      } catch (e) {
+        console.warn("[v2-auth-callback] Token is not a decodable JWT:", e);
       }
-    } catch (e) {
-      console.warn("Could not parse access token as JWT");
     }
 
-    // 2. Fetch balance to get address and balance
-    try {
-      const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (balanceRes.ok) {
-        const balanceData = await balanceRes.json();
-        balanceValue = balanceData.balance ?? balanceData.totalBalance ?? null;
-        walletAddress = balanceData.address || "";
-        // Just in case Agnic adds email/user_id later
-        agnicEmail = balanceData.email || "";
-        agnicUserId = balanceData.user_id || balanceData.userId || "";
+    // Source 3: Try Agnic /api/me endpoint (common convention)
+    if (!agnicEmail) {
+      try {
+        const meRes = await fetch("https://api.agnic.ai/api/me", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+        console.log("[v2-auth-callback] /api/me status:", meRes.status);
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          console.log("[v2-auth-callback] /api/me keys:", Object.keys(meData));
+          agnicEmail = meData.email || meData.userEmail || "";
+          agnicUserId = agnicUserId || meData.user_id || meData.userId || meData.id || "";
+        }
+      } catch (e) {
+        console.warn("[v2-auth-callback] /api/me failed:", e);
       }
-    } catch (e) {
-      console.warn("Failed to fetch balance during auth:", e);
     }
 
-    // 3. Fallback chain for identifying the user
-    agnicUserId = agnicUserId || jwtPayload.sub || walletAddress || "";
-    agnicEmail = agnicEmail || jwtPayload.email || body.email || "";
+    // Source 4: Try standard OpenID Connect /userinfo
+    if (!agnicEmail) {
+      try {
+        const userinfoRes = await fetch("https://api.agnic.ai/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+        console.log("[v2-auth-callback] /userinfo status:", userinfoRes.status);
+        if (userinfoRes.ok) {
+          const userinfoData = await userinfoRes.json();
+          console.log("[v2-auth-callback] /userinfo keys:", Object.keys(userinfoData));
+          agnicEmail = userinfoData.email || "";
+          agnicUserId = agnicUserId || userinfoData.sub || userinfoData.user_id || "";
+        }
+      } catch (e) {
+        console.warn("[v2-auth-callback] /userinfo failed:", e);
+      }
+    }
+
+    // Source 5: Try the balance endpoint (original approach)
+    if (!agnicEmail) {
+      try {
+        const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+        console.log("[v2-auth-callback] /api/balance status:", balanceRes.status);
+        if (balanceRes.ok) {
+          const balanceData = await balanceRes.json();
+          console.log("[v2-auth-callback] /api/balance keys:", Object.keys(balanceData));
+          agnicEmail = balanceData.email || "";
+          agnicUserId = agnicUserId || balanceData.user_id || balanceData.userId || "";
+          balanceValue = balanceData.balance ?? balanceData.totalBalance ?? null;
+        }
+      } catch (e) {
+        console.warn("[v2-auth-callback] /api/balance failed:", e);
+      }
+    } else {
+      // Still fetch balance even if we already have email
+      try {
+        const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (balanceRes.ok) {
+          const balanceData = await balanceRes.json();
+          balanceValue = balanceData.balance ?? balanceData.totalBalance ?? null;
+        }
+      } catch {
+        // Non-fatal
+      }
+    }
+
+    // Source 6: Use email from request body (frontend may have it from Agnic redirect)
+    if (!agnicEmail) {
+      agnicEmail = body.email || "";
+    }
 
     if (!agnicEmail) {
-      if (agnicUserId) {
-        agnicEmail = `${agnicUserId}@agnic.local`;
-      } else {
-        // Absolute fallback (though user won't be able to resume session across devices)
-        const fallbackId = crypto.randomUUID().split('-')[0];
-        agnicUserId = `anon_${fallbackId}`;
-        agnicEmail = `${agnicUserId}@agnic.local`;
-      }
+      console.error("[v2-auth-callback] Could not determine email from any source.");
+      return new Response(
+        JSON.stringify({
+          error: "no_email",
+          message: "Could not determine user email. Please try again.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
+
+    console.log("[v2-auth-callback] Resolved email:", agnicEmail, "userId:", agnicUserId);
 
     // ── Generate RoleBridge session token ──
     const rbSessionToken = crypto.randomUUID() + "-" + crypto.randomUUID();
