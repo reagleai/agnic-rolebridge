@@ -24,7 +24,8 @@ function getMaxRecordingMs(): number {
 
 function getRelayWsUrl(reqUrl: string, recordingSessionId: string): string {
   const url = new URL(reqUrl);
-  const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
+  const isSecureHost = url.host.includes("supabase.co") || url.host.includes("supabase.in") || url.protocol === "https:";
+  const wsProtocol = isSecureHost ? "wss:" : "ws:";
   return `${wsProtocol}//${url.host}/functions/v1/stt-relay/${recordingSessionId}`;
 }
 

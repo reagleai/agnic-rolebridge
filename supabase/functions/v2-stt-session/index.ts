@@ -35,7 +35,10 @@ function getMaxRecordingMs(): number {
 
 function getRelayWsUrl(reqUrl: string, recordingSessionId: string): string {
   const url = new URL(reqUrl);
-  const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
+  // Supabase Edge Functions receive http: internally even when public URL is https:.
+  // Always use wss: for production hosts to avoid mixed-content blocking.
+  const isSecureHost = url.host.includes("supabase.co") || url.host.includes("supabase.in") || url.protocol === "https:";
+  const wsProtocol = isSecureHost ? "wss:" : "ws:";
   // V2 reuses V1 stt-relay (it doesn't need auth, just recording_session_id)
   return `${wsProtocol}//${url.host}/functions/v1/stt-relay/${recordingSessionId}`;
 }
