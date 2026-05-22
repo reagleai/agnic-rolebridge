@@ -97,14 +97,28 @@ serve(async (req) => {
       );
     }
 
-    // ── Fetch user info from Agnic (using the balance endpoint to get email) ──
-    // The balance endpoint requires auth and returns user context.
-    // For now, we'll use the token to call the balance API and extract what we can.
-    // If Agnic has a /userinfo endpoint, we'd use that instead.
+    // ── Fetch user info from Agnic ──
     let agnicEmail = "";
     let agnicUserId = "";
     let balanceValue: number | null = null;
+    let walletAddress = "";
 
+    // 1. Try to parse the access token as a JWT to get 'sub' or 'email'
+    let jwtPayload: any = {};
+    try {
+      const parts = accessToken.split('.');
+      if (parts.length === 3) {
+        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4 !== 0) base64 += '=';
+        const jsonStr = atob(base64);
+        jwtPayload = JSON.parse(jsonStr);
+        console.log("Parsed JWT Payload:", JSON.stringify(jwtPayload));
+      }
+    } catch (e) {
+      console.warn("Could not parse access token as JWT");
+    }
+
+    // 2. Fetch balance to get address and balance
     try {
       const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -112,28 +126,29 @@ serve(async (req) => {
       });
       if (balanceRes.ok) {
         const balanceData = await balanceRes.json();
-        // Extract email and balance from response if available
+        balanceValue = balanceData.balance ?? balanceData.totalBalance ?? null;
+        walletAddress = balanceData.address || "";
+        // Just in case Agnic adds email/user_id later
         agnicEmail = balanceData.email || "";
         agnicUserId = balanceData.user_id || balanceData.userId || "";
-        balanceValue = balanceData.balance ?? balanceData.totalBalance ?? null;
       }
     } catch (e) {
       console.warn("Failed to fetch balance during auth:", e);
     }
 
-    // If we couldn't get the email from balance API, use the one from the request body
-    if (!agnicEmail) {
-      agnicEmail = body.email || "";
-    }
+    // 3. Fallback chain for identifying the user
+    agnicUserId = agnicUserId || jwtPayload.sub || walletAddress || "";
+    agnicEmail = agnicEmail || jwtPayload.email || body.email || "";
 
     if (!agnicEmail) {
-      return new Response(
-        JSON.stringify({
-          error: "no_email",
-          message: "Could not determine user email. Please try again.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      if (agnicUserId) {
+        agnicEmail = `${agnicUserId}@agnic.local`;
+      } else {
+        // Absolute fallback (though user won't be able to resume session across devices)
+        const fallbackId = crypto.randomUUID().split('-')[0];
+        agnicUserId = `anon_${fallbackId}`;
+        agnicEmail = `${agnicUserId}@agnic.local`;
+      }
     }
 
     // ── Generate RoleBridge session token ──
