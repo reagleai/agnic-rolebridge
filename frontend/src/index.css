@@ -3422,6 +3422,29 @@ li {
   color: var(--color-primary);
 }
 
+.wallet-toast--error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--color-error);
+}
+
+.wallet-toast__retry {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.wallet-toast__retry:hover {
+  opacity: 0.7;
+}
+
 /* Balance card */
 .wallet-balance-card {
   background: var(--color-surface);
