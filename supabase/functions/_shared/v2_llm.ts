@@ -125,7 +125,7 @@ export async function callAgnicGateway(
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(isReport ? 60_000 : 25_000),
+      signal: AbortSignal.timeout(isReport ? 50_000 : 25_000),
     });
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === "TimeoutError") {
@@ -208,10 +208,19 @@ export async function callAgnicGateway(
 
   // ── JSON extraction ──
   try {
-    const cleaned = text
-      .replace(/^```json\s*/i, "")
+    // Strip markdown fences if present
+    let cleaned = text
+      .replace(/^```(?:json)?\s*/i, "")
       .replace(/```\s*$/, "")
       .trim();
+
+    // If there's text before the first '{', extract only the JSON block
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace > 0 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+
     return JSON.parse(cleaned);
   } catch {
     // Retry once with corrective prompt

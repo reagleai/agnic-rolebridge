@@ -13,7 +13,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { v2GetReport } from '../lib/api';
+import { v2GetReport, v2EndSession } from '../lib/api';
 
 function ScoreRing({ score, size = 64 }) {
   const r = (size / 2) - 6;
@@ -53,6 +53,7 @@ export default function EndPage() {
   const [reportStatus, setReportStatus] = useState('loading'); // loading | pending | processing | ready | failed | no_session
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
+  const [pollCount, setPollCount] = useState(0);
 
   const pollRef = useRef(null);
   const mountedRef = useRef(true);
@@ -110,6 +111,7 @@ export default function EndPage() {
         console.error('Report fetch error:', err);
         // Keep polling — may be transient
       }
+      setPollCount(c => c + 1);
     }
   }, [sessionId, navigate]);
 
@@ -124,7 +126,7 @@ export default function EndPage() {
     // Poll every 3 seconds until report is ready
     pollRef.current = setInterval(fetchReport, 3000);
 
-    // Stop polling after 2 minutes (safety)
+    // Stop polling after 90 seconds (safety)
     const timeout = setTimeout(() => {
       if (pollRef.current) {
         clearInterval(pollRef.current);
@@ -134,7 +136,7 @@ export default function EndPage() {
         setReportStatus('failed');
         setError('Report generation timed out. It may still be processing — check your email.');
       }
-    }, 120_000);
+    }, 90_000);
 
     return () => {
       mountedRef.current = false;
@@ -142,6 +144,34 @@ export default function EndPage() {
       clearTimeout(timeout);
     };
   }, [sessionId, fetchReport]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRetryReport = async () => {
+    setReportStatus('pending');
+    setError('');
+    setPollCount(0);
+
+    // Re-invoke v2-session-end to re-queue the report
+    try {
+      await v2EndSession(sessionId);
+    } catch { /* ignore — session may already be ended */ }
+
+    // Re-start polling
+    fetchReport();
+    if (!pollRef.current) {
+      pollRef.current = setInterval(fetchReport, 3000);
+      // Safety timeout
+      setTimeout(() => {
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+        if (mountedRef.current && reportStatus !== 'ready') {
+          setReportStatus('failed');
+          setError('Report generation timed out. It may still be processing — check your email.');
+        }
+      }, 90_000);
+    }
+  };
 
   const handleRestart = () => {
     navigate('/setup/new', { state: { email: authUser?.email || email } });
@@ -215,9 +245,18 @@ export default function EndPage() {
             <div className="evaluating-dot" style={{ animationDelay: '300ms' }} />
           </div>
           <p className="evaluating-text">
-            {reportStatus === 'processing' ? 'Generating your evaluation report…' : 'Preparing report generation…'}
+            {reportStatus === 'processing'
+              ? 'Generating your evaluation report…'
+              : pollCount > 10
+                ? 'Still working on your report — this is taking longer than usual…'
+                : 'Preparing report generation…'}
           </p>
-          <span className="evaluating-sub">Claude 3.5 Sonnet · Agnic AI Gateway</span>
+          <span className="evaluating-sub">Gemini Flash · Agnic AI Gateway</span>
+          {pollCount > 10 && (
+            <button className="btn-ghost" onClick={handleRetryReport} style={{ marginTop: '16px' }}>
+              Retry Report Generation
+            </button>
+          )}
         </div>
       )}
 

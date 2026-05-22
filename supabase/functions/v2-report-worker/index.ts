@@ -283,7 +283,7 @@ serve(async (req) => {
           "report_generation",
           REPORT_SYSTEM,
           userPrompt,
-          { maxTokens: 4096, jsonMode: false },
+          { maxTokens: 4096, jsonMode: true },
         );
 
       let raw: Record<string, unknown>;
