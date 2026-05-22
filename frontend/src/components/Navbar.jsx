@@ -20,6 +20,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [authModal, setAuthModal] = useState(null); // null | 'signin' | 'signup'
   const [signingIn, setSigningIn] = useState(false);
+  const [authEmail, setAuthEmail] = useState('');
   const [authUser, setAuthUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('rb_v2_user') || 'null'); } catch { return null; }
   });
@@ -133,6 +134,12 @@ export default function Navbar() {
 
   /* ── Real Agnic OAuth redirect ── */
   const handleAuth = (mode) => {
+    // Validate email before redirecting
+    const email = authEmail.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return; // email input has HTML validation, this is a safety net
+    }
+
     setAuthModal(null);
     setSigningIn(true);
 
@@ -146,6 +153,7 @@ export default function Navbar() {
     const state = crypto.randomUUID();
     sessionStorage.setItem('rb_oauth_state', state);
     sessionStorage.setItem('rb_oauth_mode', mode);
+    sessionStorage.setItem('rb_oauth_email', email);
 
     const redirectUri = `${window.location.origin}/auth/callback`;
     sessionStorage.setItem('rb_oauth_redirect_uri', redirectUri);
@@ -157,6 +165,7 @@ export default function Navbar() {
       response_type: 'code',
       scope: 'payments:sign balance:read',
       state,
+      login_hint: email, // Pre-fill email on Agnic login screen
     });
 
     // Redirect to Agnic
@@ -329,19 +338,35 @@ export default function Navbar() {
                 </>
               )}
 
-              {/* Themed Agnic OAuth button */}
-              <button
-                className="btn-agnic-signin"
-                style={{ width: '100%', marginTop: '4px' }}
-                onClick={() => handleAuth(authModal)}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <polyline points="10 17 15 12 10 7" />
-                  <line x1="15" y1="12" x2="3" y2="12" />
-                </svg>
-                {authModal === 'signin' ? 'Continue with Agnic' : 'Sign Up with Agnic'}
-              </button>
+              {/* Email input */}
+              <form onSubmit={e => { e.preventDefault(); handleAuth(authModal); }} style={{ width: '100%' }}>
+                <input
+                  type="email"
+                  className="form-input"
+                  placeholder="you@example.com"
+                  value={authEmail}
+                  onChange={e => setAuthEmail(e.target.value)}
+                  required
+                  autoFocus
+                  autoComplete="email"
+                  style={{ width: '100%', marginBottom: '12px' }}
+                />
+
+                {/* Themed Agnic OAuth button */}
+                <button
+                  type="submit"
+                  className="btn-agnic-signin"
+                  style={{ width: '100%' }}
+                  disabled={!authEmail.trim()}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  {authModal === 'signin' ? 'Continue with Agnic' : 'Sign Up with Agnic'}
+                </button>
+              </form>
 
               <p className="auth-modal__note">
                 We never store card details.

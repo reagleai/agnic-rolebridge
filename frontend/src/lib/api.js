@@ -126,10 +126,10 @@ export function endSession(id) {
 // ══════════════════════════════════════════════════
 
 /** POST /v2-auth-callback - exchange OAuth code for RoleBridge session */
-export function exchangeAuthCode(code, redirect_uri, mode = "signin") {
+export function exchangeAuthCode(code, redirect_uri, mode = "signin", email = "") {
   return v2request("/v2-auth-callback", {
     method: "POST",
-    body: JSON.stringify({ code, redirect_uri, mode }),
+    body: JSON.stringify({ code, redirect_uri, mode, email }),
   });
 }
 

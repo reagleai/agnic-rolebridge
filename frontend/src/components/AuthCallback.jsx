@@ -49,13 +49,15 @@ export default function AuthCallback() {
     // Retrieve the saved mode (signin/signup) and redirect_uri
     const mode = sessionStorage.getItem('rb_oauth_mode') || 'signin';
     const redirectUri = sessionStorage.getItem('rb_oauth_redirect_uri') || `${window.location.origin}/auth/callback`;
+    const email = sessionStorage.getItem('rb_oauth_email') || '';
     sessionStorage.removeItem('rb_oauth_mode');
     sessionStorage.removeItem('rb_oauth_redirect_uri');
+    sessionStorage.removeItem('rb_oauth_email');
 
     // Exchange code for session
     (async () => {
       try {
-        const result = await exchangeAuthCode(code, redirectUri, mode);
+        const result = await exchangeAuthCode(code, redirectUri, mode, email);
 
         // Store the RoleBridge session token (NOT the Agnic token)
         localStorage.setItem('rb_session_token', result.rb_session_token);
