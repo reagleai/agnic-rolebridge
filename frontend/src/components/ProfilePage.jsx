@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
   // ── Auth guard ──
   useEffect(() => {
-    if (!authUser) navigate('/');
+    if (!authUser) navigate('/', { replace: true });
   }, [authUser, navigate]);
 
   // ── Form state ──

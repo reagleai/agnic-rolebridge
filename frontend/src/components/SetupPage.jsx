@@ -9,6 +9,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { v2CreateSession, v2SetupSession, getBalance } from '../lib/api';
+import { extractTextFromPDF } from '../lib/pdfExtractor';
 
 const SECTION_OPTIONS = [
   { value: 'Work Experience', label: 'Work Experience' },
@@ -32,12 +33,6 @@ export default function SetupPage() {
   const authUser = (() => {
     try { return JSON.parse(localStorage.getItem('rb_v2_user') || 'null'); } catch { return null; }
   })();
-
-  // Redirect to landing if not signed in
-  if (!authUser) {
-    navigate('/');
-    return null;
-  }
 
   // Profile from localStorage cache (synced by ProfilePage from v2-profile API)
   const savedProfile = (() => {
@@ -71,6 +66,10 @@ export default function SetupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+
+  useEffect(() => {
+    if (!authUser) navigate('/', { replace: true });
+  }, [authUser, navigate]);
 
   // Resolved resume text (depends on mode)
   const activeResumeText =
@@ -121,7 +120,7 @@ export default function SetupPage() {
     }
   }, [fetchBalance]);
 
-  const handleFile = (file) => {
+  const handleFile = async (file) => {
     setPdfError('');
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -131,33 +130,16 @@ export default function SetupPage() {
     setPdfName(file.name);
     setSavingPdf(true);
 
-    // Extract text from PDF using FileReader
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        // For now, read the raw text content
-        // In production, use a PDF parsing library (pdf.js)
-        const text = e.target?.result;
-        if (typeof text === 'string' && text.trim().length > 50) {
-          setResumeText(text.trim());
-        } else {
-          // Fallback: show the file name and ask user to paste
-          setPdfError('Could not extract text from PDF. Please use "Paste Text" mode instead.');
-          setPdfName('');
-        }
-      } catch {
-        setPdfError('Failed to read PDF file.');
-        setPdfName('');
-      } finally {
-        setSavingPdf(false);
-      }
-    };
-    reader.onerror = () => {
-      setPdfError('Failed to read file.');
+    try {
+      const text = await extractTextFromPDF(file);
+      setResumeText(text.trim());
+    } catch (err) {
+      console.error('PDF extraction error:', err);
+      setPdfError('Could not extract text from this PDF. Please use "Paste Text" mode instead.');
       setPdfName('');
+    } finally {
       setSavingPdf(false);
-    };
-    reader.readAsText(file);
+    }
   };
 
   const handleDrop = (e) => {
@@ -262,6 +244,8 @@ export default function SetupPage() {
 
   const hasProfileResume = Boolean(savedProfile?.resumeText);
   const profilePdfName = savedProfile?.pdfName || null;
+
+  if (!authUser) return null;
 
   return (
     <div className="page-center">

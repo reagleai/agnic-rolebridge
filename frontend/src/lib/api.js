@@ -7,7 +7,7 @@
  * sent via the x-rb-session header instead of the Supabase anon key.
  */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
 const BASE_URL = `${SUPABASE_URL}/functions/v1`;

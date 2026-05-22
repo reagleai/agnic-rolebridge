@@ -68,7 +68,7 @@ function extractSessionToken(req: Request): string | null {
  * Check if the user's Agnic access token is expired or about to expire.
  * Returns true if the token expires within the next 5 minutes.
  */
-function isTokenExpired(user: V2User): boolean {
+export function isTokenExpired(user: V2User): boolean {
   if (!user.token_expires_at) return false; // no expiry known — assume valid
   const expiresAt = new Date(user.token_expires_at).getTime();
   const buffer = 5 * 60 * 1000; // 5 minute buffer
@@ -81,7 +81,7 @@ function isTokenExpired(user: V2User): boolean {
  *
  * Returns the new access_token on success, or throws on failure.
  */
-async function refreshAgnicToken(user: V2User): Promise<string> {
+export async function refreshAgnicToken(user: V2User): Promise<string> {
   if (!user.refresh_token) {
     throw {
       status: 401,
@@ -157,6 +157,11 @@ async function refreshAgnicToken(user: V2User): Promise<string> {
   return newAccessToken;
 }
 
+export async function getFreshAgnicToken(user: V2User): Promise<string> {
+  if (!isTokenExpired(user)) return user.access_token;
+  return refreshAgnicToken(user);
+}
+
 // ── Main authentication function ──
 
 /**
@@ -200,9 +205,7 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
 
   // Check token expiry and refresh if needed
   let agnicToken = v2User.access_token;
-  if (isTokenExpired(v2User)) {
-    agnicToken = await refreshAgnicToken(v2User);
-  }
+  agnicToken = await getFreshAgnicToken(v2User);
 
   return { user: v2User, agnicToken };
 }

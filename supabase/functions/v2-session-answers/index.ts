@@ -15,7 +15,7 @@
  * - Uses Agnic Gateway (per-user token) instead of OpenRouter
  * - Authenticates via rb_session_token
  * - Verifies session ownership (session.v2_user_id)
- * - Dynamic total cap (from core_questions.length, not hardcoded 5)
+ * - Dynamic core exhaustion checks (from core_questions.length, not hardcoded 5)
  * - 402 handling for mid-session balance depletion
  */
 
@@ -132,17 +132,17 @@ function getDefaultEval(): EvalResult {
 
 /**
  * Apply hard-rule overrides to the LLM's recommendation.
- * V2: Dynamic total cap based on core_questions.length instead of hardcoded 5.
+ * V2: Core exhaustion is based on core_questions.length instead of hardcoded 5.
  */
 function determineNextAction(
   llmAction: string,
-  totalQuestions: number,
+  _totalQuestions: number,
   followupDepth: number,
   questionIndex: number,
   coreQuestionsLength: number,
 ): "followup" | "next_question" | "end_session" {
-  // Hard rule 1: total cap — once all core questions are answered, end
-  if (totalQuestions >= coreQuestionsLength - 1) {
+  // Hard rule 1: empty or exhausted core question set
+  if (coreQuestionsLength <= 0 || questionIndex >= coreQuestionsLength) {
     return "end_session";
   }
   // Hard rule 2: followup depth cap (max 2 followups per core question)
@@ -158,6 +158,10 @@ function determineNextAction(
   }
   // Otherwise trust LLM
   return llmAction as "followup" | "next_question" | "end_session";
+}
+
+function getRecentTranscript(transcript: TranscriptTurn[], maxTurns = 8): TranscriptTurn[] {
+  return transcript.slice(Math.max(0, transcript.length - maxTurns));
 }
 
 function serializeTranscript(transcript: TranscriptTurn[]): string {
@@ -225,7 +229,7 @@ serve(async (req) => {
     }
 
     // ── Verify ownership ──
-    if (session.v2_user_id && session.v2_user_id !== userId) {
+    if (session.v2_user_id !== userId) {
       return jsonResponse(
         { error: "session_forbidden", message: "This session belongs to another user." },
         403,
@@ -246,7 +250,7 @@ serve(async (req) => {
     if (
       !answer_text ||
       typeof answer_text !== "string" ||
-      answer_text.length < 10
+      answer_text.trim().length < 3
     ) {
       return jsonResponse({ error: "answer_too_short" }, 400);
     }
@@ -278,11 +282,12 @@ serve(async (req) => {
     let evalResult: EvalResult;
     try {
       const coreRemaining =
-        coreQuestions.length - session.question_index - 1;
-      const userPrompt = `Resume section (${session.section_name}):\n---\n${session.section_text}\n---\nTarget JD:\n---\n${(session.jd_text || "").substring(0, 1000)}\n---\nTranscript so far:\n${serializeTranscript(transcript)}\n---\nCurrent question: ${transcript.find(
+        Math.max(0, coreQuestions.length - session.question_index - 1);
+      const recentTranscript = getRecentTranscript(transcript);
+      const userPrompt = `Resume section (${session.section_name}):\n---\n${(session.section_text || "").substring(0, 2500)}\n---\nTarget JD:\n---\n${(session.jd_text || "").substring(0, 1000)}\n---\nRecent transcript (last up to 4 Q/A turns):\n${serializeTranscript(recentTranscript)}\n---\nCurrent question: ${transcript.find(
         (t: TranscriptTurn) =>
           t.question_id === question_id && t.type === "question",
-      )?.text || ""}\nCandidate answer: ${answer_text}\n---\nCurrent followup depth: ${session.followup_depth}\nTotal questions completed: ${session.total_questions}\nRemaining core questions: ${coreRemaining}`;
+      )?.text || ""}\nCandidate answer: ${answer_text}\n---\nCurrent followup depth: ${session.followup_depth}\nTotal answers completed before this answer: ${session.total_questions}\nRemaining core questions: ${coreRemaining}`;
 
       const raw = await callAgnicGateway(
         agnicToken,
@@ -463,9 +468,15 @@ serve(async (req) => {
     const sessionStart = new Date(session.session_start).getTime();
     const timeElapsed = Math.floor((Date.now() - sessionStart) / 1000);
     const totalQuestionsAsked = session.total_questions + 1;
+    const activeQuestionIndex =
+      finalAction === "next_question" && nextQuestion
+        ? newQuestionIndex
+        : session.question_index;
     const questionsRemaining = Math.max(
       0,
-      coreQuestions.length - totalQuestionsAsked - 1,
+      finalAction === "end_session"
+        ? 0
+        : coreQuestions.length - activeQuestionIndex - 1,
     );
 
     return jsonResponse(

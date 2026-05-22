@@ -76,7 +76,7 @@ serve(async (req) => {
     }
 
     // ── Verify session ownership ──
-    if (session.v2_user_id && session.v2_user_id !== userId) {
+    if (session.v2_user_id !== userId) {
       return jsonResponse({ error: "session_forbidden", message: "This session belongs to another user." }, 403);
     }
 
@@ -138,7 +138,10 @@ serve(async (req) => {
     // ── Calculate questions answered and remaining ──
     const totalCore = coreQuestions.length;
     const questionsAnswered = session.total_questions || 0;
-    const questionsRemaining = Math.max(0, totalCore - questionsAnswered - 1);
+    const questionsRemaining = Math.max(
+      0,
+      totalCore - (session.question_index || 0) - 1,
+    );
 
     // ── Count answers in transcript for completeness check ──
     const answerCount = transcript.filter(

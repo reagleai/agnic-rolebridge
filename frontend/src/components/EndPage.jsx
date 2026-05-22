@@ -12,7 +12,7 @@
  * - Shows email confirmation when report is sent
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { v2GetReport } from '../lib/api';
 
 function ScoreRing({ score, size = 64 }) {
@@ -64,12 +64,12 @@ export default function EndPage() {
     }
   }, [authUser, navigate]);
 
-  // ── Direct URL access guard (Issue #4) ──
+  // ── Direct URL access guard ──
   useEffect(() => {
-    if (!sessionId && !location.state) {
-      setReportStatus('no_session');
+    if (!sessionId) {
+      navigate(authUser ? '/setup/new' : '/', { replace: true });
     }
-  }, [sessionId, location.state]);
+  }, [authUser, sessionId, navigate]);
 
   // ── Poll for report ──
   const fetchReport = useCallback(async () => {

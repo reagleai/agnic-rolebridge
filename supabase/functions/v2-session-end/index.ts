@@ -23,6 +23,40 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
+async function incrementSessionCount(
+  db: ReturnType<typeof getSupabaseClient>,
+  userId: string,
+): Promise<void> {
+  const { error: rpcError } = await db.rpc("increment_counter", {
+    row_id: userId,
+    table_name: "v2_users",
+    column_name: "session_count",
+  });
+
+  if (!rpcError) return;
+
+  const { data: userRow, error: userError } = await db
+    .from("v2_users")
+    .select("session_count")
+    .eq("id", userId)
+    .single();
+
+  if (userError) throw userError;
+
+  const nextCount = ((userRow?.session_count as number | null) || 0) + 1;
+  const { error: updateError } = await db
+    .from("v2_users")
+    .update({ session_count: nextCount, updated_at: new Date().toISOString() })
+    .eq("id", userId);
+
+  if (updateError) throw updateError;
+}
+
+function buildFunctionUrl(supabaseUrl: string, functionName: string): string {
+  const base = new URL(supabaseUrl);
+  return new URL(`/functions/v1/${functionName}`, base).toString();
+}
+
 serve(async (req) => {
   const corsResp = handleCors(req);
   if (corsResp) return corsResp;
@@ -70,7 +104,7 @@ serve(async (req) => {
     }
 
     // ── Verify ownership ──
-    if (session.v2_user_id && session.v2_user_id !== userId) {
+    if (session.v2_user_id !== userId) {
       return jsonResponse({ error: "session_forbidden" }, 403);
     }
 
@@ -116,20 +150,10 @@ serve(async (req) => {
 
     // ── Increment session_count on v2_users ──
     try {
-      await db.rpc("increment_counter", {
-        row_id: userId,
-        table_name: "v2_users",
-        column_name: "session_count",
-      }).catch(() => {
-        // RPC may not exist — fallback to raw update
-        return db
-          .from("v2_users")
-          .update({ session_count: (session as Record<string, unknown>).session_count as number || 0 })
-          .eq("id", userId);
-      });
-    } catch {
+      await incrementSessionCount(db, userId);
+    } catch (err) {
       // Non-fatal — just log
-      console.warn("[v2-session-end] Failed to increment session_count");
+      console.warn("[v2-session-end] Failed to increment session_count:", err);
     }
 
     // ── Fire-and-forget: invoke v2-report-worker ──
@@ -137,7 +161,7 @@ serve(async (req) => {
       const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
       if (supabaseUrl && serviceKey && reportRow?.id) {
-        fetch(`${supabaseUrl}/functions/v1/v2-report-worker`, {
+        fetch(buildFunctionUrl(supabaseUrl, "v2-report-worker"), {
           method: "POST",
           headers: {
             Authorization: `Bearer ${serviceKey}`,
@@ -149,8 +173,9 @@ serve(async (req) => {
           console.warn("[v2-session-end] Fire-and-forget report-worker failed:", err)
         );
       }
-    } catch {
+    } catch (err) {
       // Non-blocking
+      console.warn("[v2-session-end] Could not invoke report-worker:", err);
     }
 
     return jsonResponse({

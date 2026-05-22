@@ -12,6 +12,23 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { exchangeAuthCode } from '../lib/api';
 
+const AUTH_ERROR_MESSAGES = {
+  access_denied: 'You cancelled the Agnic sign-in request.',
+  invalid_request: 'The sign-in request was invalid. Please start again.',
+  invalid_state: 'The sign-in session expired. Please start again.',
+  missing_code: 'Agnic did not return a sign-in code. Please try again.',
+  token_exchange_failed: 'We could not complete Agnic sign-in. Please try again.',
+  no_email: 'We could not read your Agnic account email. Please try again.',
+  config_error: 'Agnic sign-in is not configured for this deployment.',
+  internal_error: 'Authentication failed. Please try again.',
+};
+
+function friendlyAuthError(code, fallback) {
+  if (code && AUTH_ERROR_MESSAGES[code]) return AUTH_ERROR_MESSAGES[code];
+  if (fallback && !/^[a-z_]+$/i.test(fallback)) return fallback;
+  return 'Authentication failed. Please try again.';
+}
+
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -25,13 +42,13 @@ export default function AuthCallback() {
 
     // Handle Agnic error response
     if (errorParam) {
-      setError(errorDesc || errorParam || 'Authorization was declined.');
+      setError(friendlyAuthError(errorParam, errorDesc));
       setTimeout(() => navigate('/'), 3000);
       return;
     }
 
     if (!code) {
-      setError('No authorization code received.');
+      setError(friendlyAuthError('missing_code'));
       setTimeout(() => navigate('/'), 2000);
       return;
     }
@@ -39,7 +56,7 @@ export default function AuthCallback() {
     // Validate state if we stored one
     const savedState = sessionStorage.getItem('rb_oauth_state');
     if (savedState && state !== savedState) {
-      setError('Invalid state parameter. Please try again.');
+      setError(friendlyAuthError('invalid_state'));
       sessionStorage.removeItem('rb_oauth_state');
       setTimeout(() => navigate('/'), 2000);
       return;
@@ -79,7 +96,7 @@ export default function AuthCallback() {
         }
       } catch (err) {
         console.error('Auth callback error:', err);
-        setError(err.message || 'Authentication failed. Please try again.');
+        setError(friendlyAuthError(err.data?.error || err.message, err.data?.message));
         setTimeout(() => navigate('/'), 3000);
       }
     })();

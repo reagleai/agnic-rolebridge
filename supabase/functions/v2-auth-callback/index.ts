@@ -73,8 +73,8 @@ serve(async (req) => {
     });
 
     if (!tokenRes.ok) {
-      const errBody = await tokenRes.text();
-      console.error("Agnic token exchange failed:", tokenRes.status, errBody);
+      await tokenRes.text().catch(() => "");
+      console.error("Agnic token exchange failed:", tokenRes.status);
       return new Response(
         JSON.stringify({
           error: "token_exchange_failed",
@@ -85,12 +85,6 @@ serve(async (req) => {
     }
 
     const tokens = await tokenRes.json();
-    console.log("[v2-auth-callback] Token response keys:", Object.keys(tokens));
-    console.log("[v2-auth-callback] Token response (redacted):", JSON.stringify({
-      ...tokens,
-      access_token: tokens.access_token ? tokens.access_token.substring(0, 20) + "..." : undefined,
-      refresh_token: tokens.refresh_token ? "[REDACTED]" : undefined,
-    }));
 
     const accessToken: string = tokens.access_token;
     const refreshToken: string | undefined = tokens.refresh_token;
@@ -121,7 +115,6 @@ serve(async (req) => {
         if (parts.length === 3) {
           // Decode the payload (second part)
           const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-          console.log("[v2-auth-callback] JWT payload keys:", Object.keys(payload));
           if (payload.email) agnicEmail = payload.email;
           if (payload.sub) agnicUserId = payload.sub;
           if (payload.user_id) agnicUserId = payload.user_id;
@@ -138,10 +131,8 @@ serve(async (req) => {
           headers: { Authorization: `Bearer ${accessToken}` },
           signal: AbortSignal.timeout(10_000),
         });
-        console.log("[v2-auth-callback] /api/me status:", meRes.status);
         if (meRes.ok) {
           const meData = await meRes.json();
-          console.log("[v2-auth-callback] /api/me keys:", Object.keys(meData));
           agnicEmail = meData.email || meData.userEmail || "";
           agnicUserId = agnicUserId || meData.user_id || meData.userId || meData.id || "";
         }
@@ -157,10 +148,8 @@ serve(async (req) => {
           headers: { Authorization: `Bearer ${accessToken}` },
           signal: AbortSignal.timeout(10_000),
         });
-        console.log("[v2-auth-callback] /userinfo status:", userinfoRes.status);
         if (userinfoRes.ok) {
           const userinfoData = await userinfoRes.json();
-          console.log("[v2-auth-callback] /userinfo keys:", Object.keys(userinfoData));
           agnicEmail = userinfoData.email || "";
           agnicUserId = agnicUserId || userinfoData.sub || userinfoData.user_id || "";
         }
@@ -176,10 +165,8 @@ serve(async (req) => {
           headers: { Authorization: `Bearer ${accessToken}` },
           signal: AbortSignal.timeout(10_000),
         });
-        console.log("[v2-auth-callback] /api/balance status:", balanceRes.status);
         if (balanceRes.ok) {
           const balanceData = await balanceRes.json();
-          console.log("[v2-auth-callback] /api/balance keys:", Object.keys(balanceData));
           agnicEmail = balanceData.email || "";
           agnicUserId = agnicUserId || balanceData.user_id || balanceData.userId || "";
           balanceValue = balanceData.balance ?? balanceData.totalBalance ?? null;
@@ -218,8 +205,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    console.log("[v2-auth-callback] Resolved email:", agnicEmail, "userId:", agnicUserId);
 
     // ── Generate RoleBridge session token ──
     const rbSessionToken = crypto.randomUUID() + "-" + crypto.randomUUID();

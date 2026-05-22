@@ -5,6 +5,11 @@
  */
 export default function LandingPage() {
   const openSignup = () => {
+    if (!import.meta.env.VITE_AGNIC_CLIENT_ID) {
+      window.alert('Agnic sign-in is not configured for this deployment.');
+      return;
+    }
+
     // Dispatch a custom event that Navbar listens for
     window.dispatchEvent(new CustomEvent('rb:open-auth', { detail: 'signup' }));
   };

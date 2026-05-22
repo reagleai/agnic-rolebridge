@@ -20,8 +20,9 @@ import { v2SubmitAnswer, v2GetSession, v2EndSession, v2SttSession, getBalance } 
 import useGladiaRecording from '../hooks/useGladiaRecording';
 
 function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const safeSeconds = Math.max(0, seconds);
+  const m = Math.floor(safeSeconds / 60);
+  const s = safeSeconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
@@ -281,7 +282,7 @@ export default function InterviewPage() {
   const handleAutoSubmit = useCallback(() => {
     if (submittingRef.current) return;
     const answer = inputMode === 'voice' ? finalTranscript : textAnswer;
-    if (answer.length >= 10) {
+    if (answer.trim().length >= 3) {
       doSubmit(answer);
     } else {
       setInputMode('text');
@@ -380,7 +381,10 @@ export default function InterviewPage() {
   // ── Open Agnic top-up ──
   const openTopUp = () => {
     const clientId = import.meta.env.VITE_AGNIC_CLIENT_ID;
-    if (!clientId) return;
+    if (!clientId) {
+      setSubmitError('Top-up is not configured for this deployment.');
+      return;
+    }
 
     const returnUrl = window.location.href;
     const url = `https://app.agnic.ai/topup?client_id=${encodeURIComponent(clientId)}&return_url=${encodeURIComponent(returnUrl)}`;
@@ -452,7 +456,7 @@ export default function InterviewPage() {
   const handleStopRecording = async () => {
     const result = await gladiaStop();
     const transcript = result?.transcript || finalTranscript || '';
-    if (transcript.length >= 10) {
+    if (transcript.trim().length >= 3) {
       doSubmit(transcript);
     } else {
       setInputMode('text');
@@ -469,8 +473,8 @@ export default function InterviewPage() {
   }, [sttError]);
 
   const handleTextSubmit = () => {
-    if (textAnswer.length < 10) {
-      setSubmitError('Answer must be at least 10 characters.');
+    if (textAnswer.trim().length < 3) {
+      setSubmitError('Answer must be at least 3 characters.');
       return;
     }
     doSubmit(textAnswer);
@@ -666,7 +670,7 @@ export default function InterviewPage() {
               <div className="text-area">
                 <textarea
                   className="form-textarea answer-textarea"
-                  placeholder="Type your answer here (min 10 characters)…"
+                  placeholder="Type your answer here (min 3 characters)…"
                   value={textAnswer}
                   onChange={(e) => setTextAnswer(e.target.value)}
                   rows={4}
@@ -677,7 +681,7 @@ export default function InterviewPage() {
                   <button
                     className="btn-primary"
                     onClick={handleTextSubmit}
-                    disabled={textAnswer.length < 10}
+                    disabled={textAnswer.trim().length < 3}
                   >
                     Submit Answer
                   </button>
@@ -706,7 +710,7 @@ export default function InterviewPage() {
               or end now and receive a partial report.
             </p>
             <div className="modal-actions">
-              <button className="btn-agnic-signin" onClick={() => { openTopUp(); handleTopUpAndResume(); }} style={{ width: '100%' }}>
+              <button className="btn-agnic-signin" onClick={openTopUp} style={{ width: '100%' }}>
                 <span className="btn-agnic-inner"> Add Credits &amp; Continue</span>
               </button>
               <button

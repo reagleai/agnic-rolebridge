@@ -28,6 +28,9 @@ const ALLOWED_FIELDS = [
   "transition_notes",
 ];
 
+const PROFILE_SELECT =
+  "name, headline, years_exp, current_role, target_role, linkedin_url, resume_text, pdf_name, transition_notes, updated_at";
+
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -86,7 +89,7 @@ serve(async (req) => {
     if (req.method === "GET") {
       const { data: profile, error } = await db
         .from("v2_profiles")
-        .select("name, headline, years_exp, current_role, target_role, linkedin_url, resume_text, pdf_name, transition_notes, updated_at")
+        .select(PROFILE_SELECT)
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -146,7 +149,7 @@ serve(async (req) => {
           .from("v2_profiles")
           .update({ ...cleanData, updated_at: new Date().toISOString() })
           .eq("user_id", userId)
-          .select("name, headline, years_exp, current_role, target_role, linkedin_url, resume_text, pdf_name, transition_notes, updated_at")
+          .select(PROFILE_SELECT)
           .single();
 
         if (error) {
@@ -160,7 +163,7 @@ serve(async (req) => {
         const { data: created, error } = await db
           .from("v2_profiles")
           .insert({ user_id: userId, ...cleanData })
-          .select("name, headline, years_exp, current_role, target_role, linkedin_url, resume_text, pdf_name, transition_notes, updated_at")
+          .select(PROFILE_SELECT)
           .single();
 
         if (error) {

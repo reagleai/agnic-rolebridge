@@ -90,7 +90,7 @@ serve(async (req) => {
     }
 
     // ── Verify ownership ──
-    if (session.v2_user_id && session.v2_user_id !== userId) {
+    if (session.v2_user_id !== userId) {
       return jsonResponse({ error: "session_forbidden" }, 403);
     }
 
@@ -108,6 +108,8 @@ serve(async (req) => {
       return jsonResponse({
         error: "gladia_session_failed",
         message: "STT service not configured",
+        fallback_input_type: "text",
+        voice_available: false,
       }, 502);
     }
 
@@ -139,6 +141,8 @@ serve(async (req) => {
       return jsonResponse({
         error: "gladia_session_failed",
         message: "Failed to reach STT service",
+        fallback_input_type: "text",
+        voice_available: false,
       }, 502);
     }
 
@@ -148,6 +152,8 @@ serve(async (req) => {
       return jsonResponse({
         error: "gladia_session_failed",
         message: `STT service returned ${gladiaRes.status}`,
+        fallback_input_type: "text",
+        voice_available: false,
       }, 502);
     }
 
@@ -160,6 +166,8 @@ serve(async (req) => {
       return jsonResponse({
         error: "gladia_session_failed",
         message: "Invalid STT response",
+        fallback_input_type: "text",
+        voice_available: false,
       }, 502);
     }
 
@@ -200,6 +208,11 @@ serve(async (req) => {
     }, 200);
   } catch (err) {
     console.error("[v2-stt-session] Unexpected error:", err);
-    return jsonResponse({ error: "gladia_session_failed", message: String(err) }, 502);
+    return jsonResponse({
+      error: "gladia_session_failed",
+      message: String(err),
+      fallback_input_type: "text",
+      voice_available: false,
+    }, 502);
   }
 });

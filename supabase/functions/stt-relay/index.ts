@@ -6,7 +6,7 @@
  * to the browser without storing audio chunks.
  */
 
-import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import { getCorsHeaders, handleCors } from "../_shared/cors.ts";
 import { getSupabaseClient } from "../_shared/db.ts";
 
 const UUID_RE =
@@ -31,6 +31,7 @@ function safeSend(socket: WebSocket, data: string | ArrayBuffer): void {
 Deno.serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
+  const corsHeaders = getCorsHeaders(req);
 
   const upgrade = req.headers.get("upgrade") || "";
   if (upgrade.toLowerCase() !== "websocket") {

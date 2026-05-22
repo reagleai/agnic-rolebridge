@@ -20,6 +20,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [authModal, setAuthModal] = useState(null); // null | 'signin' | 'signup'
   const [signingIn, setSigningIn] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authUser, setAuthUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('rb_v2_user') || 'null'); } catch { return null; }
@@ -122,7 +123,10 @@ export default function Navbar() {
   /* ── Listen for auth modal trigger from other components (e.g. Landing CTA) ── */
   useEffect(() => {
     const handler = (e) => {
-      if (!authUser) setAuthModal(e.detail || 'signup');
+      if (!authUser) {
+        setAuthError('');
+        setAuthModal(e.detail || 'signup');
+      }
     };
     window.addEventListener('rb:open-auth', handler);
     return () => window.removeEventListener('rb:open-auth', handler);
@@ -137,18 +141,21 @@ export default function Navbar() {
 
   /* ── Real Agnic OAuth redirect ── */
   const handleAuth = (mode) => {
+    setAuthError('');
+
     // Validate email before redirecting
     const email = authEmail.trim();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setAuthError('Enter a valid email address to continue.');
       return; // email input has HTML validation, this is a safety net
     }
 
-    setAuthModal(null);
     setSigningIn(true);
 
     if (!AGNIC_CLIENT_ID) {
       console.error('Missing VITE_AGNIC_CLIENT_ID');
       setSigningIn(false);
+      setAuthError('Agnic sign-in is not configured for this deployment.');
       return;
     }
 
@@ -287,7 +294,7 @@ export default function Navbar() {
               <button
                 id="navbar-signin-btn"
                 className="navbar-auth-btn navbar-auth-btn--ghost"
-                onClick={() => setAuthModal('signin')}
+                onClick={() => { setAuthError(''); setAuthModal('signin'); }}
                 disabled={signingIn}
               >
                 {signingIn ? <span className="spinner-sm spinner-sm--themed" /> : 'Sign In'}
@@ -295,10 +302,10 @@ export default function Navbar() {
               <button
                 id="navbar-signup-btn"
                 className="navbar-auth-btn navbar-auth-btn--primary"
-                onClick={() => setAuthModal('signup')}
+                onClick={() => { setAuthError(''); setAuthModal('signup'); }}
                 disabled={signingIn}
               >
-                Sign Up
+                {signingIn ? 'Redirecting...' : 'Sign Up'}
               </button>
             </div>
           )}
@@ -312,7 +319,7 @@ export default function Navbar() {
 
       {/* ── Auth Modal ── */}
       {authModal && (
-        <div className="modal-overlay" onClick={() => setAuthModal(null)}>
+        <div className="modal-overlay" onClick={() => { if (!signingIn) setAuthModal(null); }}>
           <div className="modal-card auth-modal" onClick={e => e.stopPropagation()}>
 
             {/* Tab switcher */}
@@ -360,16 +367,27 @@ export default function Navbar() {
                   type="submit"
                   className="btn-agnic-signin"
                   style={{ width: '100%' }}
-                  disabled={!authEmail.trim()}
+                  disabled={!authEmail.trim() || signingIn}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                    <polyline points="10 17 15 12 10 7" />
-                    <line x1="15" y1="12" x2="3" y2="12" />
-                  </svg>
-                  {authModal === 'signin' ? 'Continue with Agnic' : 'Sign Up with Agnic'}
+                  {signingIn ? (
+                    <>
+                      <span className="spinner-sm spinner-sm--themed" />
+                      Redirecting to Agnic...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                        <polyline points="10 17 15 12 10 7" />
+                        <line x1="15" y1="12" x2="3" y2="12" />
+                      </svg>
+                      {authModal === 'signin' ? 'Continue with Agnic' : 'Sign Up with Agnic'}
+                    </>
+                  )}
                 </button>
               </form>
+
+              {authError && <p className="form-error" style={{ marginTop: '12px' }}>{authError}</p>}
 
               <p className="auth-modal__note">
                 We never store card details.
@@ -389,7 +407,7 @@ export default function Navbar() {
             </div>
 
             {/* Close */}
-            <button className="modal-close-btn" onClick={() => setAuthModal(null)} aria-label="Close">
+            <button className="modal-close-btn" onClick={() => { if (!signingIn) setAuthModal(null); }} aria-label="Close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>

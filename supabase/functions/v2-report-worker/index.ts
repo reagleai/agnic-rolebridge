@@ -25,6 +25,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { getSupabaseClient } from "../_shared/db.ts";
 import { callAgnicGateway } from "../_shared/v2_llm.ts";
+import { getFreshAgnicToken, refreshAgnicToken } from "../_shared/v2_auth.ts";
+import type { V2User } from "../_shared/v2_auth.ts";
+import type { LLMError } from "../_shared/v2_llm.ts";
 
 // ── Types ──
 
@@ -253,7 +256,7 @@ serve(async (req) => {
     // ── Step 3: Get user's Agnic token ──
     const { data: user, error: userError } = await db
       .from("v2_users")
-      .select("access_token, email")
+      .select("*")
       .eq("id", reportUserId)
       .single();
 
@@ -271,13 +274,27 @@ serve(async (req) => {
 
       const userPrompt = `Target JD:\n---\n${(session.jd_text || "").substring(0, 1000)}\n---\nResume section (${session.section_name || "General"}):\n---\n${(session.section_text || "").substring(0, 2000)}\n---\nFull Interview Transcript:\n${serialized}`;
 
-      const raw = await callAgnicGateway(
-        user.access_token,
-        "report_generation",
-        REPORT_SYSTEM,
-        userPrompt,
-        { maxTokens: 4096 },
-      );
+      const v2User = user as V2User;
+      let agnicToken = await getFreshAgnicToken(v2User);
+
+      const generate = (token: string) =>
+        callAgnicGateway(
+          token,
+          "report_generation",
+          REPORT_SYSTEM,
+          userPrompt,
+          { maxTokens: 4096, jsonMode: false },
+        );
+
+      let raw: Record<string, unknown>;
+      try {
+        raw = await generate(agnicToken);
+      } catch (err) {
+        const llmErr = err as LLMError;
+        if (llmErr?.status !== 401 || !v2User.refresh_token) throw err;
+        agnicToken = await refreshAgnicToken(v2User);
+        raw = await generate(agnicToken);
+      }
 
       const r = raw as Record<string, unknown>;
       if (!r.opening_summary || !r.dimensions || !r.overall_impression) {
@@ -287,7 +304,10 @@ serve(async (req) => {
       report = r as unknown as ReportData;
     } catch (err) {
       console.error("[v2-report-worker] Report generation failed:", err);
-      await db.from("v2_reports").update({ status: "failed" }).eq("id", reportId);
+      await db
+        .from("v2_reports")
+        .update({ status: "failed", error_message: String(err) })
+        .eq("id", reportId);
       return jsonResponse({ error: "report_gen_failed", message: String(err) }, 500);
     }
 

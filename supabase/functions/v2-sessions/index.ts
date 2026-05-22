@@ -48,6 +48,23 @@ serve(async (req) => {
 
     const db = getSupabaseClient();
 
+    const { count: createdCount, error: countError } = await db
+      .from("sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("v2_user_id", user.id);
+
+    if (countError) {
+      console.error("v2-sessions: session count check error:", countError);
+      return jsonResponse({ error: "db_error", message: countError.message }, 500);
+    }
+
+    if ((createdCount || 0) >= 50) {
+      return jsonResponse({
+        error: "session_limit_reached",
+        message: "You have reached the 50-session limit for this account.",
+      }, 429);
+    }
+
     // ── Create session linked to V2 user ──
     const { data, error } = await db
       .from("sessions")

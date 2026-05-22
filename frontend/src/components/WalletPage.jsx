@@ -28,7 +28,7 @@ export default function WalletPage() {
 
   // ── Auth guard ──
   useEffect(() => {
-    if (!authUser) navigate('/');
+    if (!authUser) navigate('/', { replace: true });
   }, [authUser, navigate]);
 
   // ── Balance state ──

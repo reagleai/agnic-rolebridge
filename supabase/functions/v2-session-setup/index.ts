@@ -87,9 +87,11 @@ serve(async (req) => {
   try {
     // ── Authenticate ──
     let agnicToken: string;
+    let userId: string;
     try {
       const auth = await authenticateRequest(req);
       agnicToken = auth.agnicToken;
+      userId = auth.user.id;
     } catch (err: unknown) {
       if (err && typeof err === "object" && "status" in err) {
         return authErrorResponse(
@@ -123,6 +125,13 @@ serve(async (req) => {
 
     if (fetchError || !session) {
       return jsonResponse({ error: "session_not_found" }, 404);
+    }
+
+    if (session.v2_user_id !== userId) {
+      return jsonResponse(
+        { error: "session_forbidden", message: "This session belongs to another user." },
+        403,
+      );
     }
 
     if (session.status !== "setup") {
