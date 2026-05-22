@@ -13,7 +13,7 @@
 
 // ── Default model — single model for all tasks (Pay-As-You-Go) ──
 
-const DEFAULT_MODEL = "anthropic/claude-3.5-haiku";
+const DEFAULT_MODEL = "openai/gpt-oss-120b:free";
 
 // Allow per-task overrides via env vars (same pattern as V1)
 const ENV_KEY_MAP: Record<string, string> = {
@@ -90,7 +90,8 @@ export async function callAgnicGateway(
 
   const temperature = options?.temperature ?? (isReport ? 0.4 : 0.3);
   const maxTokens = options?.maxTokens ?? (isReport ? 3000 : 2048);
-  const jsonMode = options?.jsonMode !== false; // default true
+  const wantsJsonMode = options?.jsonMode !== false; // default true
+  const supportsJsonResponseFormat = !/(anthropic|claude)/i.test(model);
 
   // Build request headers
   const headers: Record<string, string> = {
@@ -114,7 +115,7 @@ export async function callAgnicGateway(
 
   // response_format may not be supported by all models on Agnic Gateway.
   // Use it when jsonMode is true; if it causes errors, callers can set jsonMode: false.
-  if (jsonMode) {
+  if (wantsJsonMode && supportsJsonResponseFormat) {
     body.response_format = { type: "json_object" };
   }
 
