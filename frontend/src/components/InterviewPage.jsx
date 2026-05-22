@@ -1,6 +1,6 @@
 /**
  * RoleBridge V2 — Interview Page
- * Block 3: Wired to real V2 backend.
+ * Blocks 3+7: Wired to real V2 backend + Gladia STT.
  *
  * Fixes:
  * - Issue #1: "Quit Session" button added
@@ -11,11 +11,13 @@
  * - Real answer submission via v2-session-answers Edge Function
  * - 402 mid-session top-up with resume-after-topup
  * - Dynamic question count
- * - Voice (mock for now, wired in Block 7) + text input
+ * - Real Gladia STT voice recording via useGladiaRecording hook
+ * - Text input fallback
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { v2SubmitAnswer, v2GetSession, v2EndSession, getBalance } from '../lib/api';
+import { v2SubmitAnswer, v2GetSession, v2EndSession, v2SttSession, getBalance } from '../lib/api';
+import useGladiaRecording from '../hooks/useGladiaRecording';
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -47,9 +49,8 @@ export default function InterviewPage() {
   const [inputMode, setInputMode] = useState('voice');
   const [textAnswer, setTextAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [mockTranscript, setMockTranscript] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [sttInitializing, setSttInitializing] = useState(false);
 
   const [sessionSecs, setSessionSecs] = useState(0);
   const [answerSecs, setAnswerSecs] = useState(60);
@@ -59,8 +60,21 @@ export default function InterviewPage() {
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [pendingAnswer, setPendingAnswer] = useState(null); // for 402 retry
 
+  // ── Gladia STT hook ──
+  const {
+    startRecording: gladiaStart,
+    stopRecording: gladiaStop,
+    prepareAudioContext,
+    teardownVoiceSession,
+    finalTranscript,
+    interimText,
+    isRecording,
+    error: sttError,
+    setError: setSttError,
+  } = useGladiaRecording();
+
+  const sttWsUrlRef = useRef(null);
   const submittingRef = useRef(false);
-  const recordingIntervalRef = useRef(null);
   const answerTimerRef = useRef(null);
   const sessionTimerRef = useRef(null);
   const mountedRef = useRef(true);
@@ -245,7 +259,7 @@ export default function InterviewPage() {
   const triggerEnd = useCallback(async () => {
     clearInterval(sessionTimerRef.current);
     clearInterval(answerTimerRef.current);
-    clearInterval(recordingIntervalRef.current);
+    if (isRecording) teardownVoiceSession('session_end');
 
     // Fire-and-forget: end the session server-side
     if (sessionId && sessionId !== 'new') {
@@ -266,21 +280,21 @@ export default function InterviewPage() {
   // ── Auto-submit when answer timer expires ──
   const handleAutoSubmit = useCallback(() => {
     if (submittingRef.current) return;
-    const answer = inputMode === 'voice' ? mockTranscript : textAnswer;
+    const answer = inputMode === 'voice' ? finalTranscript : textAnswer;
     if (answer.length >= 10) {
       doSubmit(answer);
     } else {
       setInputMode('text');
     }
-  }, [inputMode, mockTranscript, textAnswer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [inputMode, finalTranscript, textAnswer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Submit answer to backend ──
   const doSubmit = async (answerText) => {
     if (submittingRef.current) return;
     submittingRef.current = true;
     clearInterval(answerTimerRef.current);
-    clearInterval(recordingIntervalRef.current);
-    setIsRecording(false);
+    // Stop recording if active
+    if (isRecording) teardownVoiceSession('submitting');
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -395,26 +409,50 @@ export default function InterviewPage() {
     return () => window.removeEventListener('message', onMessage);
   }, [pendingAnswer]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Voice mock recording (replaced in Block 7 with real Gladia) ──
-  const handleStartRecording = () => {
+  // ── Real Gladia STT recording ──
+  const handleStartRecording = async () => {
     setSubmitError('');
-    setMockTranscript('');
-    setIsRecording(true);
-    let chars = '';
-    const sample = "I led the initiative to redesign our core onboarding flow working closely with engineering and design. We ran user research across 40 interviews and identified that users were dropping off at step 3. After implementing the changes we saw a 34 percent increase in activation rate within 60 days.";
-    let i = 0;
-    recordingIntervalRef.current = setInterval(() => {
-      if (i < sample.length) {
-        chars += sample[i++];
-        setMockTranscript(chars);
+    setSttError(null);
+    setSttInitializing(true);
+
+    // Prepare AudioContext (needs user gesture)
+    const audioOk = await prepareAudioContext();
+    if (!audioOk) {
+      setSttInitializing(false);
+      setInputMode('text');
+      setSubmitError('Audio is not supported on this browser. Please type your answer.');
+      return;
+    }
+
+    // Get Gladia WebSocket URL from backend
+    if (!sttWsUrlRef.current) {
+      try {
+        const sttData = await v2SttSession(sessionId);
+        sttWsUrlRef.current = sttData.relay_ws_url || sttData.ws_url;
+      } catch (err) {
+        console.error('STT session init error:', err);
+        setSttInitializing(false);
+        setInputMode('text');
+        setSubmitError('Voice recording is unavailable. Please type your answer.');
+        return;
       }
-    }, 30);
+    }
+
+    // Start recording via Gladia
+    const started = await gladiaStart(sttWsUrlRef.current, {
+      useRelay: sttWsUrlRef.current?.includes('stt-relay'),
+    });
+    setSttInitializing(false);
+
+    if (!started) {
+      setInputMode('text');
+      setSubmitError('Could not start recording. Please type your answer instead.');
+    }
   };
 
-  const handleStopRecording = () => {
-    clearInterval(recordingIntervalRef.current);
-    setIsRecording(false);
-    const transcript = mockTranscript;
+  const handleStopRecording = async () => {
+    const result = await gladiaStop();
+    const transcript = result?.transcript || finalTranscript || '';
     if (transcript.length >= 10) {
       doSubmit(transcript);
     } else {
@@ -422,6 +460,14 @@ export default function InterviewPage() {
       setSubmitError('Recording too short — please type your answer.');
     }
   };
+
+  // ── Handle STT errors (switch to text mode) ──
+  useEffect(() => {
+    if (sttError && sttError !== 'mic_denied') {
+      setInputMode('text');
+      setSubmitError('Voice recording error — switched to text mode.');
+    }
+  }, [sttError]);
 
   const handleTextSubmit = () => {
     if (textAnswer.length < 10) {
@@ -554,8 +600,8 @@ export default function InterviewPage() {
             <div className="mode-toggle">
               <button
                 className={`mode-btn ${inputMode === 'voice' ? 'active' : ''}`}
-                onClick={() => { setInputMode('voice'); clearInterval(recordingIntervalRef.current); setIsRecording(false); }}
-                disabled={isRecording}
+                onClick={() => { if (isRecording) teardownVoiceSession('mode_switch'); setInputMode('voice'); }}
+                disabled={isRecording || sttInitializing}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -567,7 +613,7 @@ export default function InterviewPage() {
               </button>
               <button
                 className={`mode-btn ${inputMode === 'text' ? 'active' : ''}`}
-                onClick={() => { setInputMode('text'); clearInterval(recordingIntervalRef.current); setIsRecording(false); }}
+                onClick={() => { if (isRecording) teardownVoiceSession('mode_switch'); setInputMode('text'); }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
                   <path d="M17 6.1H3M21 12.1H3M15.1 18H3" />
@@ -578,8 +624,8 @@ export default function InterviewPage() {
 
             {inputMode === 'voice' ? (
               <div className="voice-area">
-                {!isRecording ? (
-                  <button className="btn-record" onClick={handleStartRecording}>
+                {!isRecording && !sttInitializing ? (
+                  <button className="btn-record" onClick={handleStartRecording} disabled={isSubmitting}>
                     <span className="btn-record-icon">
                       <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '20px', height: '20px' }}>
                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -590,6 +636,11 @@ export default function InterviewPage() {
                     </span>
                     Start Recording
                   </button>
+                ) : sttInitializing ? (
+                  <div className="recording-indicator">
+                    <span className="spinner-sm" />
+                    <span>Connecting to microphone…</span>
+                  </div>
                 ) : (
                   <>
                     <div className="recording-indicator">
@@ -597,8 +648,11 @@ export default function InterviewPage() {
                       <span>Recording…</span>
                       <span className="rec-wave"><span /><span /><span /><span /><span /></span>
                     </div>
-                    {mockTranscript && (
-                      <p className="transcript interim">{mockTranscript}<span className="transcript-cursor">|</span></p>
+                    {(finalTranscript || interimText) && (
+                      <p className="transcript interim">
+                        {finalTranscript}{interimText && <span style={{ opacity: 0.5 }}> {interimText}</span>}
+                        <span className="transcript-cursor">|</span>
+                      </p>
                     )}
                     <button className="btn-stop" onClick={handleStopRecording}>
                       <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '16px', height: '16px' }}>

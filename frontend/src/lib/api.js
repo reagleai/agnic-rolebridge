@@ -193,7 +193,16 @@ export function v2GetReport(sessionId) {
 }
 
 // ══════════════════════════════════════════════════
-// V2 Endpoint wrappers — Profile (to be wired in Block 6)
+// V2 Endpoint wrappers — STT
+// ══════════════════════════════════════════════════
+
+/** GET /v2-stt-session/:id - get Gladia WebSocket URL (authenticated) */
+export function v2SttSession(id) {
+  return v2request(`/v2-stt-session/${id}`, { method: "GET" });
+}
+
+// ══════════════════════════════════════════════════
+// V2 Endpoint wrappers — Profile
 // ══════════════════════════════════════════════════
 
 /** GET /v2-profile - get user profile */
