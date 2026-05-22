@@ -735,8 +735,8 @@ export default function InterviewPage() {
             <p className="modal-body">
               You've answered <strong>{totalAsked}</strong> of <strong>{totalCore}</strong> questions.
               {totalAsked >= 2
-                ? ' You'll receive a partial report based on your answers so far.'
-                : ' You need at least 2 answers for a meaningful report.'}
+                ? " You'll receive a partial report based on your answers so far."
+                : " You need at least 2 answers for a meaningful report."}
             </p>
             <div className="modal-actions">
               <button className="btn-primary" onClick={() => setShowQuitModal(false)} style={{ width: '100%' }}>
