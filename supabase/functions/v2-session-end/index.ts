@@ -159,25 +159,22 @@ serve(async (req) => {
     // ── Invoke v2-report-worker (awaited to ensure it actually starts) ──
     let workerStatus = "queued";
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-      if (supabaseUrl && serviceKey && reportRow?.id) {
-        const workerRes = await fetch(buildFunctionUrl(supabaseUrl, "v2-report-worker"), {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ report_id: reportRow.id }),
-          signal: AbortSignal.timeout(55_000),
+      if (reportRow?.id) {
+        const { data, error } = await db.functions.invoke("v2-report-worker", {
+          body: { report_id: reportRow.id }
         });
-        const workerBody = await workerRes.json().catch(() => ({}));
-        workerStatus = workerBody.status || (workerRes.ok ? "triggered" : "invoke_failed");
-        console.log("[v2-session-end] Report worker response:", workerRes.status, workerStatus);
+        
+        if (error) {
+          console.error("[v2-session-end] functions.invoke error:", error);
+          workerStatus = "invoke_failed";
+        } else {
+          workerStatus = data?.status || "triggered";
+          console.log("[v2-session-end] Report worker invoked successfully:", workerStatus);
+        }
       }
     } catch (err) {
       // Non-fatal — the report row is in 'pending' state and the frontend polls
-      console.warn("[v2-session-end] Report worker invocation error:", err);
+      console.warn("[v2-session-end] Report worker invocation exception:", err);
       workerStatus = "invoke_failed";
     }
 
