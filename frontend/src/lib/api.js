@@ -192,6 +192,14 @@ export function v2GetReport(sessionId) {
   return v2request(`/v2-report/${sessionId}`, { method: "GET" });
 }
 
+/** POST /v2-report-worker - retry report generation for a session */
+export function v2RetryReport(sessionId) {
+  return v2request("/v2-report-worker", {
+    method: "POST",
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+}
+
 // ══════════════════════════════════════════════════
 // V2 Endpoint wrappers — STT
 // ══════════════════════════════════════════════════

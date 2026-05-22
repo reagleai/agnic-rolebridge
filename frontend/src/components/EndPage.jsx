@@ -13,7 +13,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { v2GetReport, v2EndSession } from '../lib/api';
+import { v2GetReport, v2RetryReport } from '../lib/api';
 
 function ScoreRing({ score, size = 64 }) {
   const r = (size / 2) - 6;
@@ -150,10 +150,12 @@ export default function EndPage() {
     setError('');
     setPollCount(0);
 
-    // Re-invoke v2-session-end to re-queue the report
+    // Directly invoke report worker with session_id (retry support)
     try {
-      await v2EndSession(sessionId);
-    } catch { /* ignore — session may already be ended */ }
+      await v2RetryReport(sessionId);
+    } catch (err) {
+      console.warn('Retry report request failed:', err);
+    }
 
     // Re-start polling
     fetchReport();
@@ -269,7 +271,10 @@ export default function EndPage() {
             </svg>
           </div>
           <p className="evaluating-text">{error || 'Report generation failed.'}</p>
-          <button className="btn-primary" onClick={handleRestart} style={{ marginTop: '16px' }}>
+          <button className="btn-primary" onClick={handleRetryReport} style={{ marginTop: '16px' }}>
+            Retry Report Generation
+          </button>
+          <button className="btn-ghost" onClick={handleRestart} style={{ marginTop: '8px' }}>
             Start New Session
           </button>
         </div>

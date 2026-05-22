@@ -183,13 +183,59 @@ serve(async (req) => {
   const db = getSupabaseClient();
 
   try {
-    // ── Parse optional report_id from body ──
+    // ── Parse optional report_id or session_id from body ──
     let targetReportId: string | null = null;
+    let targetSessionId: string | null = null;
     try {
       const body = await req.json();
       targetReportId = body.report_id || null;
+      targetSessionId = body.session_id || null;
     } catch {
       // Body may be empty (cron invocation)
+    }
+
+    // ── Resolve session_id → report_id (for retry support) ──
+    if (!targetReportId && targetSessionId) {
+      // Find most recent report for this session
+      const { data: existing } = await db
+        .from("v2_reports")
+        .select("id, status")
+        .eq("session_id", targetSessionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existing) {
+        if (existing.status === "failed" || existing.status === "pending") {
+          // Reset failed report to pending for retry
+          await db.from("v2_reports").update({ status: "pending", error_message: null }).eq("id", existing.id);
+          targetReportId = existing.id;
+        } else if (existing.status === "processing") {
+          return jsonResponse({ status: "already_processing" }, 200);
+        } else if (existing.status === "ready") {
+          return jsonResponse({ status: "already_ready" }, 200);
+        }
+      } else {
+        // No report exists — look up session owner and create one
+        const { data: session } = await db
+          .from("sessions")
+          .select("v2_user_id")
+          .eq("id", targetSessionId)
+          .single();
+
+        if (session?.v2_user_id) {
+          const { data: newReport } = await db
+            .from("v2_reports")
+            .insert({ session_id: targetSessionId, user_id: session.v2_user_id, report_json: {}, status: "pending" })
+            .select("id")
+            .single();
+          if (newReport) targetReportId = newReport.id;
+        }
+      }
+
+      if (!targetReportId) {
+        return jsonResponse({ error: "no_report_found", message: "Could not find or create a report for this session." }, 404);
+      }
     }
 
     // ── Step 1: Claim a pending report ──
