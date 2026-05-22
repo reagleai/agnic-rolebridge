@@ -13,7 +13,7 @@
 
 // ── Default model — single model for all tasks (Pay-As-You-Go) ──
 
-const DEFAULT_MODEL = "openai/gpt-oss-120b:free";
+const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 // Allow per-task overrides via env vars (same pattern as V1)
 const ENV_KEY_MAP: Record<string, string> = {
