@@ -334,7 +334,6 @@ export default function InterviewPage() {
       }
 
       setTextAnswer('');
-      setMockTranscript('');
       submittingRef.current = false;
       setIsSubmitting(false);
     } catch (err) {

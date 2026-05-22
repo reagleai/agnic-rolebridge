@@ -13,7 +13,7 @@
 
 // ── Default model — single model for all tasks (Pay-As-You-Go) ──
 
-const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
+const DEFAULT_MODEL = "anthropic/claude-3.5-haiku";
 
 // Allow per-task overrides via env vars (same pattern as V1)
 const ENV_KEY_MAP: Record<string, string> = {
@@ -220,7 +220,7 @@ export async function callAgnicGateway(
         task,
         systemPrompt,
         userPrompt +
-          "\n\nIMPORTANT: Your previous response was not valid JSON. Return ONLY the JSON object, no other text.",
+        "\n\nIMPORTANT: Your previous response was not valid JSON. Return ONLY the JSON object, no other text.",
         options,
         retryCount + 1,
       );
