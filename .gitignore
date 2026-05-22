@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files (NEVER commit real secrets)
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.*
+
+# Supabase local
+.supabase/
+supabase/.temp/
+supabase/.branches/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Architecture / Spec Documents
+RoleBridge_V1_Technical_Architecture_Gladia.md
+rolebridge_v1_spec.md
