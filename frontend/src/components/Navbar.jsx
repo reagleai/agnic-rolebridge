@@ -62,8 +62,11 @@ export default function Navbar() {
       setAuthUser(data.user);
       localStorage.setItem('rb_v2_user', JSON.stringify(data.user));
       if (data.balance !== null && data.balance !== undefined) {
-        setBalance(data.balance);
-        localStorage.setItem('rb_v2_balance', data.balance.toString());
+        const b = parseFloat(data.balance);
+        if (!isNaN(b)) {
+          setBalance(b);
+          localStorage.setItem('rb_v2_balance', b.toString());
+        }
       }
     } catch (err) {
       if (err.status === 401) {
@@ -222,7 +225,7 @@ export default function Navbar() {
               <Link to="/wallet" className="navbar-balance" title="Manage wallet">
                 <span className="navbar-balance-icon"></span>
                 <span className="navbar-balance-val">
-                  {balance !== null ? `$${balance.toFixed(2)}` : '...'}
+                  {typeof balance === 'number' && !isNaN(balance) ? `$${balance.toFixed(2)}` : '...'}
                 </span>
               </Link>
 
@@ -255,7 +258,7 @@ export default function Navbar() {
                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" />
                       </svg>
                       Wallet · <span style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.813rem' }}>
-                        {balance !== null ? `$${balance.toFixed(2)}` : '...'}
+                        {typeof balance === 'number' && !isNaN(balance) ? `$${balance.toFixed(2)}` : '...'}
                       </span>
                     </Link>
 

@@ -53,10 +53,10 @@ export default function WalletPage() {
     setBalanceError('');
     try {
       const data = await getBalance();
-      const total = data.balance ?? 0;
+      const total = parseFloat(data.balance) || 0;
       setBalance(total);
-      setCreditBalance(data.creditBalance ?? 0);
-      setUsdcBalance(data.usdcBalance ?? 0);
+      setCreditBalance(parseFloat(data.creditBalance) || 0);
+      setUsdcBalance(parseFloat(data.usdcBalance) || 0);
       setAddress(data.address || null);
       setNetwork(data.network || 'base-sepolia');
       localStorage.setItem('rb_v2_balance', total.toString());
@@ -145,7 +145,9 @@ export default function WalletPage() {
 
   if (!authUser) return null;
 
-  const displayBalance = balance !== null ? balance : 0;
+  const displayBalance = typeof balance === 'number' && !isNaN(balance) ? balance : 0;
+  const safeCreditBalance = typeof creditBalance === 'number' && !isNaN(creditBalance) ? creditBalance : 0;
+  const safeUsdcBalance = typeof usdcBalance === 'number' && !isNaN(usdcBalance) ? usdcBalance : 0;
 
   return (
     <div className="wallet-page">
@@ -192,13 +194,13 @@ export default function WalletPage() {
             <div className="wallet-balance-item">
               <span className="wallet-balance-item__label">Agnic Credits</span>
               <span className="wallet-balance-item__val">
-                {balanceLoading ? '...' : `$${creditBalance.toFixed(2)}`}
+                {balanceLoading ? '...' : `$${safeCreditBalance.toFixed(2)}`}
               </span>
             </div>
             <div className="wallet-balance-item">
               <span className="wallet-balance-item__label">USDC</span>
               <span className="wallet-balance-item__val">
-                {balanceLoading ? '...' : `$${usdcBalance.toFixed(2)}`}
+                {balanceLoading ? '...' : `$${safeUsdcBalance.toFixed(2)}`}
               </span>
             </div>
           </div>

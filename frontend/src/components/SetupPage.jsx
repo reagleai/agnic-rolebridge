@@ -81,8 +81,11 @@ export default function SetupPage() {
     try {
       const data = await getBalance();
       if (data.balance !== undefined && data.balance !== null) {
-        setBalance(data.balance);
-        localStorage.setItem('rb_v2_balance', data.balance.toString());
+        const b = parseFloat(data.balance);
+        if (!isNaN(b)) {
+          setBalance(b);
+          localStorage.setItem('rb_v2_balance', b.toString());
+        }
       }
     } catch {
       // Use cached balance if fetch fails
@@ -472,7 +475,7 @@ export default function SetupPage() {
             </div>
             <div className="slider-estimate">
               Estimated cost: <strong>{estimatedCost}</strong> from your Agnic wallet
-              <span className="slider-balance"> · Balance: ${balance.toFixed(2)}</span>
+              <span className="slider-balance"> · Balance: ${typeof balance === 'number' && !isNaN(balance) ? balance.toFixed(2) : '...'}</span>
             </div>
           </div>
 
@@ -500,7 +503,7 @@ export default function SetupPage() {
             </div>
             <h3 className="modal-title">Low Wallet Balance</h3>
             <p className="modal-body">
-              Your current balance is <strong>${balance.toFixed(2)}</strong>. A minimum of <strong>$1.00</strong> is required to start a session.
+              Your current balance is <strong>${typeof balance === 'number' && !isNaN(balance) ? balance.toFixed(2) : '0.00'}</strong>. A minimum of <strong>$1.00</strong> is required to start a session.
             </p>
             <div className="modal-actions">
               <button className="btn-agnic-signin" onClick={handleTopUp} style={{ width: '100%' }}>
