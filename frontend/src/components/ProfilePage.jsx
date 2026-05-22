@@ -1,78 +1,196 @@
 /**
- * RoleBridge V2 — Profile Page (Prototype)
- * Saves: name, email, headline, years of experience, resume text, LinkedIn URL.
- * Persisted to sessionStorage for use in SetupPage ("Import from Profile").
+ * RoleBridge V2 — Profile Page
+ * Block 6: Wired to real V2 backend.
+ *
+ * Features:
+ * - Loads profile from v2-profile on mount
+ * - Saves via PUT /v2-profile
+ * - Clears via DELETE /v2-profile
+ * - Real PDF extraction via pdfExtractor
+ * - Auth from localStorage
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const PROFILE_KEY = 'rb_v2_profile';
-
-function loadProfile() {
-  try { return JSON.parse(sessionStorage.getItem(PROFILE_KEY) || 'null'); } catch { return null; }
-}
+import { v2GetProfile, v2SaveProfile, v2DeleteProfile } from '../lib/api';
+import { extractTextFromPDF } from '../lib/pdfExtractor';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const fileRef = useRef(null);
 
   const authUser = (() => {
-    try { return JSON.parse(sessionStorage.getItem('rb_v2_user') || 'null'); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('rb_v2_user') || 'null'); } catch { return null; }
   })();
 
-  // Redirect to landing if not signed in
+  // ── Auth guard ──
   useEffect(() => {
     if (!authUser) navigate('/');
   }, [authUser, navigate]);
 
-  const existing = loadProfile();
+  // ── Form state ──
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState(authUser?.email || '');
+  const [headline, setHeadline] = useState('');
+  const [yearsExp, setYearsExp] = useState('');
+  const [currentRole, setCurrentRole] = useState('');
+  const [targetRole, setTargetRole] = useState('');
+  const [linkedin, setLinkedin] = useState('');
+  const [resumeText, setResumeText] = useState('');
+  const [pdfName, setPdfName] = useState('');
+  const [notes, setNotes] = useState('');
 
-  const [name, setName] = useState(existing?.name || '');
-  const [email, setEmail] = useState(existing?.email || authUser?.email || '');
-  const [headline, setHeadline] = useState(existing?.headline || '');
-  const [yearsExp, setYearsExp] = useState(existing?.yearsExp || '');
-  const [currentRole, setCurrentRole] = useState(existing?.currentRole || '');
-  const [targetRole, setTargetRole] = useState(existing?.targetRole || '');
-  const [linkedin, setLinkedin] = useState(existing?.linkedin || '');
-  const [resumeText, setResumeText] = useState(existing?.resumeText || '');
-  const [pdfName, setPdfName] = useState(existing?.pdfName || '');
-  const [notes, setNotes] = useState(existing?.notes || '');
-
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savingPdf, setSavingPdf] = useState(false);
   const [pdfError, setPdfError] = useState('');
+  const [saveError, setSaveError] = useState('');
 
-  const handleFile = (file) => {
+  // ── Load profile from API on mount ──
+  const loadProfile = useCallback(async () => {
+    try {
+      const data = await v2GetProfile();
+      const p = data.profile;
+      if (p) {
+        setName(p.name || '');
+        setHeadline(p.headline || '');
+        setYearsExp(p.years_exp || '');
+        setCurrentRole(p.current_role || '');
+        setTargetRole(p.target_role || '');
+        setLinkedin(p.linkedin_url || '');
+        setResumeText(p.resume_text || '');
+        setPdfName(p.pdf_name || '');
+        setNotes(p.transition_notes || '');
+      }
+    } catch (err) {
+      console.error('Profile load error:', err);
+      if (err.status === 401) {
+        navigate('/', { replace: true });
+        return;
+      }
+      // Fallback to localStorage cache
+      try {
+        const cached = JSON.parse(localStorage.getItem('rb_v2_profile') || 'null');
+        if (cached) {
+          setName(cached.name || '');
+          setHeadline(cached.headline || '');
+          setYearsExp(cached.years_exp || cached.yearsExp || '');
+          setCurrentRole(cached.current_role || cached.currentRole || '');
+          setTargetRole(cached.target_role || cached.targetRole || '');
+          setLinkedin(cached.linkedin_url || cached.linkedin || '');
+          setResumeText(cached.resume_text || cached.resumeText || '');
+          setPdfName(cached.pdf_name || cached.pdfName || '');
+          setNotes(cached.transition_notes || cached.notes || '');
+        }
+      } catch { /* ignore */ }
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  // ── PDF handling ──
+  const handleFile = async (file) => {
     if (!file) return;
     setPdfError('');
     if (file.size > 5 * 1024 * 1024) { setPdfError('PDF is too large (max 5MB).'); return; }
     setSavingPdf(true);
     setPdfName(file.name);
-    setTimeout(() => {
-      setResumeText(`[Extracted from ${file.name}]\n\nSenior Product Manager — Acme Corp (2021–2024)\n• Led a cross-functional team of 8 to redesign the onboarding flow, increasing activation rate by 34%.\n• Launched 3 major product features in partnership with engineering and design.\n• Defined OKRs and aligned roadmap with company strategy.\n\nProduct Manager — StartupXYZ (2018–2021)\n• Owned the analytics dashboard from 0 to 10,000 users.\n• Reduced customer churn by 18% through targeted feature improvements.\n• Worked closely with customers to define requirements and iterate on the product.`);
+
+    try {
+      const text = await extractTextFromPDF(file);
+      if (text && text.length > 20) {
+        setResumeText(text);
+      } else {
+        setPdfError('Could not extract text from PDF. Please paste your resume manually.');
+      }
+    } catch (err) {
+      console.error('PDF extraction error:', err);
+      setPdfError('Failed to extract text from PDF. Please paste manually.');
+    } finally {
       setSavingPdf(false);
-    }, 700);
+    }
   };
 
-  const handleSave = (e) => {
+  // ── Save profile ──
+  const handleSave = async (e) => {
     e.preventDefault();
-    const profile = { name, email, headline, yearsExp, currentRole, targetRole, linkedin, resumeText, pdfName, notes };
-    sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    // Also sync email to auth user
-    sessionStorage.setItem('rb_v2_user', JSON.stringify({ ...authUser, email }));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    setSaved(false);
+    setSaveError('');
+
+    const payload = {
+      name: name || null,
+      headline: headline || null,
+      years_exp: yearsExp || null,
+      current_role: currentRole || null,
+      target_role: targetRole || null,
+      linkedin_url: linkedin || null,
+      resume_text: resumeText || null,
+      pdf_name: pdfName || null,
+      transition_notes: notes || null,
+    };
+
+    try {
+      const data = await v2SaveProfile(payload);
+
+      // Cache locally for offline / fast load
+      localStorage.setItem('rb_v2_profile', JSON.stringify(payload));
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Profile save error:', err);
+      if (err.status === 401) {
+        navigate('/', { replace: true });
+        return;
+      }
+      setSaveError(err.data?.message || 'Failed to save profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleClear = () => {
-    if (!window.confirm('Clear all profile data?')) return;
-    sessionStorage.removeItem(PROFILE_KEY);
-    setName(''); setHeadline(''); setYearsExp(''); setCurrentRole('');
-    setTargetRole(''); setLinkedin(''); setResumeText(''); setPdfName(''); setNotes('');
+  // ── Clear profile ──
+  const handleClear = async () => {
+    if (!window.confirm('Clear all profile data? This cannot be undone.')) return;
+
+    try {
+      await v2DeleteProfile();
+      localStorage.removeItem('rb_v2_profile');
+      setName(''); setHeadline(''); setYearsExp(''); setCurrentRole('');
+      setTargetRole(''); setLinkedin(''); setResumeText(''); setPdfName(''); setNotes('');
+    } catch (err) {
+      console.error('Profile clear error:', err);
+      // Clear locally anyway
+      localStorage.removeItem('rb_v2_profile');
+      setName(''); setHeadline(''); setYearsExp(''); setCurrentRole('');
+      setTargetRole(''); setLinkedin(''); setResumeText(''); setPdfName(''); setNotes('');
+    }
   };
+
+  if (!authUser) return null;
 
   const completionFields = [name, email, headline, yearsExp, currentRole, targetRole, resumeText];
   const completionPct = Math.round((completionFields.filter(Boolean).length / completionFields.length) * 100);
+
+  if (loading) {
+    return (
+      <div className="page-center">
+        <div className="card" style={{ textAlign: 'center', padding: '48px 32px', maxWidth: '420px' }}>
+          <div className="evaluating-pulse" style={{ marginBottom: '20px' }}>
+            <div className="evaluating-dot" style={{ animationDelay: '0ms' }} />
+            <div className="evaluating-dot" style={{ animationDelay: '150ms' }} />
+            <div className="evaluating-dot" style={{ animationDelay: '300ms' }} />
+          </div>
+          <h3 className="modal-title" style={{ marginBottom: '8px' }}>Loading profile…</h3>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
@@ -146,9 +264,10 @@ export default function ProfilePage() {
                 <input
                   type="email"
                   className="form-input"
-                  placeholder="alex@example.com"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  disabled
+                  style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                  title="Email is managed by your Agnic account"
                 />
               </div>
             </div>
@@ -306,8 +425,15 @@ export default function ProfilePage() {
 
           {/* Actions */}
           <div className="profile-actions">
-            <button type="submit" className="btn-primary profile-save-btn">
-              {saved ? (
+            {saveError && <p className="form-error" style={{ marginBottom: '12px', textAlign: 'center' }}>{saveError}</p>}
+
+            <button type="submit" className="btn-primary profile-save-btn" disabled={saving}>
+              {saving ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="spinner-sm" />
+                  Saving…
+                </span>
+              ) : saved ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
                     <polyline points="20 6 9 17 4 12" />
@@ -320,7 +446,7 @@ export default function ProfilePage() {
             <button
               type="button"
               className="btn-primary profile-start-btn"
-              onClick={() => navigate('/setup/demo-session', { state: { email } })}
+              onClick={() => navigate('/setup/new')}
               style={{ background: 'var(--color-surface)', color: 'var(--color-primary)', border: '1.5px solid var(--color-primary)' }}
             >
               Start Interview →

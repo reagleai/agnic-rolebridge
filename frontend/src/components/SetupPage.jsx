@@ -39,9 +39,18 @@ export default function SetupPage() {
     return null;
   }
 
-  // Profile from localStorage (will be switched to API in Block 6)
+  // Profile from localStorage cache (synced by ProfilePage from v2-profile API)
   const savedProfile = (() => {
-    try { return JSON.parse(localStorage.getItem('rb_v2_profile') || 'null'); } catch { return null; }
+    try {
+      const raw = JSON.parse(localStorage.getItem('rb_v2_profile') || 'null');
+      if (!raw) return null;
+      // Normalize: API returns snake_case, legacy was camelCase
+      return {
+        name: raw.name || null,
+        resumeText: raw.resume_text || raw.resumeText || null,
+        pdfName: raw.pdf_name || raw.pdfName || null,
+      };
+    } catch { return null; }
   })();
 
   const [balance, setBalance] = useState(() => {
