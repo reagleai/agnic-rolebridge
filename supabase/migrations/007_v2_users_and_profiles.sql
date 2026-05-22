@@ -39,7 +39,7 @@ CREATE TABLE v2_profiles (
   name              TEXT,
   headline          TEXT,
   years_exp         TEXT,                             -- '0-2', '3-5', '6-10', '10+'
-  current_role      TEXT,
+  "current_role"      TEXT,
   target_role       TEXT,
   linkedin_url      TEXT,
   resume_text       TEXT,
