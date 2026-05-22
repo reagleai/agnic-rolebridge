@@ -335,6 +335,9 @@ export default function InterviewPage() {
       }
 
       setTextAnswer('');
+      // Invalidate cached STT URL — Gladia WebSocket URLs are single-use
+      sttWsUrlRef.current = null;
+      setInputMode('voice'); // reset to voice mode for next question
       submittingRef.current = false;
       setIsSubmitting(false);
     } catch (err) {
@@ -518,7 +521,7 @@ export default function InterviewPage() {
     );
   }
 
-  const progress = Math.round((totalAsked / totalCore) * 100);
+  const progress = Math.min(100, Math.round(((coreIndex + 1) / totalCore) * 100));
 
   return (
     <div className="interview-page">
@@ -542,7 +545,7 @@ export default function InterviewPage() {
         </div>
         <div className="timer-item">
           <span className="timer-label">Progress</span>
-          <span className="timer-value">{totalAsked + 1} / {totalCore}</span>
+          <span className="timer-value">{Math.min(coreIndex + 1, totalCore)} / {totalCore}</span>
         </div>
       </div>
 

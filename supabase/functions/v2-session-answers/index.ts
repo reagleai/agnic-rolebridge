@@ -133,20 +133,30 @@ function getDefaultEval(): EvalResult {
 /**
  * Apply hard-rule overrides to the LLM's recommendation.
  * V2: Core exhaustion is based on core_questions.length instead of hardcoded 5.
+ *
+ * Hard caps:
+ * - Max 1 followup per core question (depth cap)
+ * - Absolute answer cap = 2× core count (prevents runaway sessions)
+ * - Core exhaustion when no more core questions remain
  */
 function determineNextAction(
   llmAction: string,
-  _totalQuestions: number,
+  totalQuestions: number,
   followupDepth: number,
   questionIndex: number,
   coreQuestionsLength: number,
 ): "followup" | "next_question" | "end_session" {
+  // Hard rule 0: absolute cap — total answers must not exceed 2× core count
+  const absoluteCap = coreQuestionsLength * 2;
+  if (totalQuestions + 1 >= absoluteCap) {
+    return "end_session";
+  }
   // Hard rule 1: empty or exhausted core question set
   if (coreQuestionsLength <= 0 || questionIndex >= coreQuestionsLength) {
     return "end_session";
   }
-  // Hard rule 2: followup depth cap (max 2 followups per core question)
-  if (llmAction === "followup" && followupDepth >= 2) {
+  // Hard rule 2: followup depth cap (max 1 followup per core question)
+  if (llmAction === "followup" && followupDepth >= 1) {
     return "next_question";
   }
   // Hard rule 3: core exhaustion — no more core questions to advance to
