@@ -120,6 +120,12 @@ export default function EndPage() {
 
     if (!sessionId) return;
 
+    // ── FRONTEND SAFEGUARD ──
+    // Forcefully start the worker from the frontend.
+    // If the backend background task failed to start, this explicitly catches it.
+    // If the backend task already started, this gracefully returns 202 immediately.
+    v2RetryReport(sessionId).catch(() => {});
+
     // Initial fetch
     fetchReport();
 
