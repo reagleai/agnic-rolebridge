@@ -311,7 +311,7 @@ serve(async (req) => {
           ((raw as Record<string, unknown>).eval as Record<string, unknown>) ||
           getDefaultEval().eval,
         next_action:
-          ((raw as Record<string, unknown>).next_action as string) ||
+          (((raw as Record<string, unknown>).next_action as string) as "followup" | "next_question" | "end_session") ||
           "next_question",
         followup_question:
           ((raw as Record<string, unknown>).followup_question as {

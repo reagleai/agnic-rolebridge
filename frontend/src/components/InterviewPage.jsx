@@ -180,6 +180,7 @@ export default function InterviewPage() {
   }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Session timer (countdown from expiresAt) ──
+  const workerPingedRef = useRef(false);
   useEffect(() => {
     if (!sessionReady) return;
 
@@ -187,6 +188,15 @@ export default function InterviewPage() {
       if (expiresAt) {
         const remaining = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
         setSessionSecs(remaining);
+
+        // Ping worker to pre-warm it when less than 60s remain in the session
+        if (remaining < 60 && !workerPingedRef.current) {
+          workerPingedRef.current = true;
+          fetch(`${(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1/v2-report-worker?ping=1`, {
+            method: "GET",
+          }).catch(() => {});
+        }
+
         if (remaining <= 0) {
           clearInterval(sessionTimerRef.current);
           triggerEnd();
@@ -606,7 +616,11 @@ export default function InterviewPage() {
             <div className="mode-toggle">
               <button
                 className={`mode-btn ${inputMode === 'voice' ? 'active' : ''}`}
-                onClick={() => { if (isRecording) teardownVoiceSession('mode_switch'); setInputMode('voice'); }}
+                onClick={() => {
+                  if (isRecording) teardownVoiceSession('mode_switch');
+                  sttWsUrlRef.current = null;
+                  setInputMode('voice');
+                }}
                 disabled={isRecording || sttInitializing}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
@@ -619,7 +633,11 @@ export default function InterviewPage() {
               </button>
               <button
                 className={`mode-btn ${inputMode === 'text' ? 'active' : ''}`}
-                onClick={() => { if (isRecording) teardownVoiceSession('mode_switch'); setInputMode('text'); }}
+                onClick={() => {
+                  if (isRecording) teardownVoiceSession('mode_switch');
+                  sttWsUrlRef.current = null;
+                  setInputMode('text');
+                }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
                   <path d="M17 6.1H3M21 12.1H3M15.1 18H3" />

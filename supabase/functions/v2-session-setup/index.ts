@@ -231,8 +231,13 @@ serve(async (req) => {
 
       // Parse response
       const raw = (genResult as { questions?: unknown }).questions || genResult;
-      if (!Array.isArray(raw) || raw.length < 2) {
-        throw new Error(`Invalid question array: expected ${qCount}, got ${Array.isArray(raw) ? raw.length : 'non-array'}`);
+
+      if (!Array.isArray(raw) || raw.length < Math.min(qCount, 4)) {
+        throw new Error(`LLM returned too few questions: expected ${qCount}, got ${Array.isArray(raw) ? raw.length : 'non-array'}`);
+      }
+
+      if (raw.length < qCount) {
+        console.warn(`[v2-session-setup] LLM returned ${raw.length}/${qCount} questions — using what we have`);
       }
 
       // Sanitize and normalize

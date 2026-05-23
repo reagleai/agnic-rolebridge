@@ -47,7 +47,18 @@ async function request(path, options = {}) {
 // Still sends the Supabase anon key in Authorization (required by Supabase
 // Edge Functions for routing) but the actual auth is via x-rb-session.
 
-async function v2request(path, options = {}) {
+async function withRetry(fn, maxRetries = 2, delayMs = 1500) {
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === maxRetries || err.status < 500) throw err;
+      await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+}
+
+async function v2request(path, options = {}, timeoutMs = 45_000) {
   const url = `${BASE_URL}${path}`;
   const rbToken = localStorage.getItem("rb_session_token") || "";
 
@@ -60,22 +71,37 @@ async function v2request(path, options = {}) {
     ...options.headers,
   };
 
-  const res = await fetch(url, { ...options, headers });
-  let data = null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    data = await res.json();
-  } catch {
-    data = {};
-  }
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
+    }
 
-  if (!res.ok) {
-    const err = new Error(data.error || data.message || `request_failed_${res.status}`);
-    err.status = res.status;
-    err.data = data;
+    if (!res.ok) {
+      const err = new Error(data.error || data.message || `request_failed_${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      const timeoutErr = new Error('request_timeout');
+      timeoutErr.status = 504;
+      timeoutErr.data = { error: 'request_timeout', message: 'The server took too long to respond. Please try again.' };
+      throw timeoutErr;
+    }
     throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }
 
 // ══════════════════════════════════════════════════
@@ -163,10 +189,10 @@ export function v2CreateSession() {
 
 /** POST /v2-session-setup/:id - setup session with resume/JD */
 export function v2SetupSession(id, payload) {
-  return v2request(`/v2-session-setup/${id}`, {
+  return withRetry(() => v2request(`/v2-session-setup/${id}`, {
     method: "POST",
     body: JSON.stringify(payload),
-  });
+  }, 60_000)); // give setup more time for LLM calls
 }
 
 /** GET /v2-session-get/:id - rehydrate V2 session state */
@@ -176,10 +202,10 @@ export function v2GetSession(id) {
 
 /** POST /v2-session-answers/:id - submit answer (to be wired in Block 3) */
 export function v2SubmitAnswer(id, payload) {
-  return v2request(`/v2-session-answers/${id}`, {
+  return withRetry(() => v2request(`/v2-session-answers/${id}`, {
     method: "POST",
     body: JSON.stringify(payload),
-  });
+  }));
 }
 
 /** POST /v2-session-end/:id - end session, queue report */

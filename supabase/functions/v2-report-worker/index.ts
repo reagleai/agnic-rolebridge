@@ -180,6 +180,11 @@ serve(async (req) => {
   const corsResp = handleCors(req);
   if (corsResp) return corsResp;
 
+  const url = new URL(req.url);
+  if (req.method === "GET" || url.searchParams.get("ping") === "1") {
+    return jsonResponse({ status: "warm" }, 200);
+  }
+
   const db = getSupabaseClient();
 
   try {
@@ -188,6 +193,7 @@ serve(async (req) => {
     let targetSessionId: string | null = null;
     try {
       const body = await req.json();
+      if (body?.ping) return jsonResponse({ status: "warm" }, 200);
       targetReportId = body.report_id || null;
       targetSessionId = body.session_id || null;
     } catch {
