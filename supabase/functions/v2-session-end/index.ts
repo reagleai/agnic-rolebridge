@@ -156,20 +156,28 @@ serve(async (req) => {
       console.warn("[v2-session-end] Failed to increment session_count:", err);
     }
 
-    // ── Invoke v2-report-worker (fire-and-forget with brief delay to ensure network dispatch) ──
+    // ── Invoke v2-report-worker (background task) ──
     let workerStatus = "queued";
     try {
       if (reportRow?.id) {
-        // We do NOT await this fully because it takes 30s+ to generate the report
-        // and we want to return a 202 to the frontend so it can poll.
-        db.functions.invoke("v2-report-worker", {
+        const invokePromise = db.functions.invoke("v2-report-worker", {
           body: { report_id: reportRow.id }
-        }).catch(err => console.warn("[v2-session-end] Background invoke failed:", err));
-        
-        // Wait briefly to ensure the network request is dispatched before the 
-        // Edge Function potentially goes to sleep after returning the response
-        await new Promise(resolve => setTimeout(resolve, 800));
-        workerStatus = "triggered";
+        }).then(({ data, error }) => {
+           if (error) console.error("[v2-session-end] Background worker error:", error);
+           else console.log("[v2-session-end] Background worker success:", data);
+        }).catch(err => console.error("[v2-session-end] Background worker fetch failed:", err));
+
+        // @ts-ignore - EdgeRuntime is available globally in Supabase Edge Functions
+        if (typeof EdgeRuntime !== 'undefined') {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(invokePromise);
+          console.log("[v2-session-end] Worker queued via EdgeRuntime.waitUntil");
+          workerStatus = "triggered";
+        } else {
+          // Fallback (might be killed mid-flight)
+          await new Promise(resolve => setTimeout(resolve, 800));
+          workerStatus = "triggered_fallback";
+        }
       }
     } catch (err) {
       // Non-fatal — the report row is in 'pending' state and the frontend polls
