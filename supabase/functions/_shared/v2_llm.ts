@@ -125,7 +125,7 @@ export async function callAgnicGateway(
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(isReport ? 50_000 : 25_000),
+      signal: AbortSignal.timeout(isReport ? 90_000 : 60_000),
     });
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === "TimeoutError") {

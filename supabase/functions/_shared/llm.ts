@@ -88,7 +88,7 @@ export async function callLLM(
         max_tokens: isReport ? 3000 : 2048,
         response_format: { type: "json_object" },
       }),
-      signal: AbortSignal.timeout(isReport ? 60_000 : 25_000),
+      signal: AbortSignal.timeout(isReport ? 90_000 : 60_000),
     });
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === "TimeoutError") {
