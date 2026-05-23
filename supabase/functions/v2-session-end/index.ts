@@ -156,21 +156,20 @@ serve(async (req) => {
       console.warn("[v2-session-end] Failed to increment session_count:", err);
     }
 
-    // ── Invoke v2-report-worker (awaited to ensure it actually starts) ──
+    // ── Invoke v2-report-worker (fire-and-forget with brief delay to ensure network dispatch) ──
     let workerStatus = "queued";
     try {
       if (reportRow?.id) {
-        const { data, error } = await db.functions.invoke("v2-report-worker", {
+        // We do NOT await this fully because it takes 30s+ to generate the report
+        // and we want to return a 202 to the frontend so it can poll.
+        db.functions.invoke("v2-report-worker", {
           body: { report_id: reportRow.id }
-        });
+        }).catch(err => console.warn("[v2-session-end] Background invoke failed:", err));
         
-        if (error) {
-          console.error("[v2-session-end] functions.invoke error:", error);
-          workerStatus = "invoke_failed";
-        } else {
-          workerStatus = data?.status || "triggered";
-          console.log("[v2-session-end] Report worker invoked successfully:", workerStatus);
-        }
+        // Wait briefly to ensure the network request is dispatched before the 
+        // Edge Function potentially goes to sleep after returning the response
+        await new Promise(resolve => setTimeout(resolve, 800));
+        workerStatus = "triggered";
       }
     } catch (err) {
       // Non-fatal — the report row is in 'pending' state and the frontend polls
