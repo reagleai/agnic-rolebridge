@@ -1153,6 +1153,12 @@ li {
   background: var(--color-surface);
 }
 
+.drop-zone:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-highlight);
+}
+
 .drop-zone-hint {
   color: var(--color-text-muted);
   font-size: 0.95rem;
