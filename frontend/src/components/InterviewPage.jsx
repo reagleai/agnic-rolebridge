@@ -50,6 +50,7 @@ export default function InterviewPage() {
   const [inputMode, setInputMode] = useState('voice');
   const [textAnswer, setTextAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [sttInitializing, setSttInitializing] = useState(false);
 
@@ -268,11 +269,12 @@ export default function InterviewPage() {
 
   // ── End session ──
   const triggerEnd = useCallback(async () => {
+    setIsFinishing(true);
     clearInterval(sessionTimerRef.current);
     clearInterval(answerTimerRef.current);
     if (isRecording) teardownVoiceSession('session_end');
 
-    // Fire-and-forget: end the session server-side
+    // Await to ensure backend completes before navigation (or keep it fire-and-forget but show loader)
     if (sessionId && sessionId !== 'new') {
       try { await v2EndSession(sessionId); } catch { /* ignore */ }
     }
@@ -742,6 +744,21 @@ export default function InterviewPage() {
                 End Session Now (get partial report)
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Finishing Overlay ── */}
+      {isFinishing && (
+        <div className="modal-overlay" style={{ zIndex: 9999, background: 'var(--color-bg)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="evaluating-pulse" style={{ margin: '0 auto 24px' }}>
+              <div className="evaluating-dot" style={{ animationDelay: '0ms' }} />
+              <div className="evaluating-dot" style={{ animationDelay: '150ms' }} />
+              <div className="evaluating-dot" style={{ animationDelay: '300ms' }} />
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-text)', marginBottom: '8px' }}>Finalizing Interview...</h2>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.938rem' }}>Generating your comprehensive feedback report</p>
           </div>
         </div>
       )}
