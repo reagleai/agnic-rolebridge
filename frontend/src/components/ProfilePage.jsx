@@ -122,6 +122,12 @@ export default function ProfilePage() {
     setSaved(false);
     setSaveError('');
 
+    if (resumeText && resumeText.length > 50000) {
+      setSaveError('Resume text is too long (max 50,000 characters). Please condense it.');
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       name: name || null,
       headline: headline || null,
@@ -416,10 +422,11 @@ export default function ProfilePage() {
                 className="form-textarea"
                 placeholder="Your resume text will appear here after PDF upload, or paste it directly…"
                 value={resumeText}
+                maxLength={50000}
                 onChange={e => setResumeText(e.target.value)}
                 rows={10}
               />
-              <span className="char-count">{resumeText.length} chars</span>
+              <span className="char-count">{resumeText.length} / 50000 chars</span>
             </div>
           </div>
 
