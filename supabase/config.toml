@@ -430,3 +430,43 @@ verify_jwt = false
 
 [functions.report-worker]
 verify_jwt = false
+
+[functions.v2-auth-callback]
+verify_jwt = false
+
+[functions.v2-auth-logout]
+verify_jwt = false
+
+[functions.v2-auth-me]
+verify_jwt = false
+
+[functions.v2-balance]
+verify_jwt = false
+
+[functions.v2-profile]
+verify_jwt = false
+
+[functions.v2-report]
+verify_jwt = false
+
+[functions.v2-report-worker]
+verify_jwt = false
+
+[functions.v2-session-answers]
+verify_jwt = false
+
+[functions.v2-session-end]
+verify_jwt = false
+
+[functions.v2-session-get]
+verify_jwt = false
+
+[functions.v2-session-setup]
+verify_jwt = false
+
+[functions.v2-sessions]
+verify_jwt = false
+
+[functions.v2-stt-session]
+verify_jwt = false
+
