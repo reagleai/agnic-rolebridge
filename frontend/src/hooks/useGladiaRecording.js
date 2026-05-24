@@ -30,6 +30,7 @@ export default function useGladiaRecording() {
   const startTimeRef = useRef(null);
   const transcriptRef = useRef('');
   const isRecordingRef = useRef(false);
+  const isStoppingRef = useRef(false);
   const stopResolverRef = useRef(null);
   const stopTimeoutRef = useRef(null);
 
@@ -115,6 +116,7 @@ export default function useGladiaRecording() {
     cleanupMedia();
     cleanupSocket();
     isRecordingRef.current = false;
+    isStoppingRef.current = false;
     setIsRecording(false);
     resolveStop(
       startTimeRef.current
@@ -124,8 +126,11 @@ export default function useGladiaRecording() {
   }, [cleanupMedia, cleanupSocket, clearHeartbeat, resolveStop, sendStopSignal]);
 
   const failRecording = useCallback((code, reason = code) => {
+    const wasStopping = isStoppingRef.current;
     teardownVoiceSession(reason);
-    setError(code);
+    if (!wasStopping) {
+      setError(code);
+    }
   }, [teardownVoiceSession]);
 
   const prepareAudioContext = useCallback(async () => {
@@ -202,6 +207,8 @@ export default function useGladiaRecording() {
     if (isRecordingRef.current || wsRef.current || streamRef.current) {
       teardownVoiceSession('restart_recording');
     }
+    
+    isStoppingRef.current = false;
 
     if (!navigator.mediaDevices?.getUserMedia) {
       // Fix: Phase 4B - browsers without getUserMedia must fail cleanly and not desync UI state.
@@ -330,12 +337,13 @@ export default function useGladiaRecording() {
       return Promise.resolve({ elapsed, transcript: transcriptRef.current });
     }
 
+    isStoppingRef.current = true;
     sendStopSignal('client_stop');
 
     return new Promise((resolve) => {
       stopResolverRef.current = (result) => {
+        teardownVoiceSession('stop_complete');
         resolve(result);
-        setTimeout(() => teardownVoiceSession('stop_complete'), 200);
       };
       stopTimeoutRef.current = setTimeout(() => {
         teardownVoiceSession('final_transcript_timeout');

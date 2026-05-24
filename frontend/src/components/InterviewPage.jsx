@@ -482,10 +482,12 @@ export default function InterviewPage() {
   // ── Handle STT errors (switch to text mode) ──
   useEffect(() => {
     if (sttError && sttError !== 'mic_denied') {
-      setInputMode('text');
-      setSubmitError('Voice recording error - switched to text mode.');
+      if (!submittingRef.current && !isFinishing) {
+        setInputMode('text');
+        setSubmitError('Voice recording error - switched to text mode.');
+      }
     }
-  }, [sttError]);
+  }, [sttError, isFinishing]);
 
   const handleTextSubmit = () => {
     if (textAnswer.trim().length < 3) {

@@ -57,6 +57,7 @@ export default function EndPage() {
 
   const pollRef = useRef(null);
   const mountedRef = useRef(true);
+  const isReadyRef = useRef(false);
 
   // ── Auth guard (Issue #8) ──
   useEffect(() => {
@@ -81,6 +82,7 @@ export default function EndPage() {
       if (!mountedRef.current) return;
 
       if (data.status === 'ready' && data.report) {
+        isReadyRef.current = true;
         setReport(data.report);
         setReportStatus('ready');
         setEmailSent(data.email_sent || false);
@@ -138,7 +140,7 @@ export default function EndPage() {
         clearInterval(pollRef.current);
         pollRef.current = null;
       }
-      if (mountedRef.current && reportStatus !== 'ready') {
+      if (mountedRef.current && !isReadyRef.current) {
         setReportStatus('failed');
         setError('Report generation timed out. It may still be processing - check your email.');
       }
@@ -152,6 +154,7 @@ export default function EndPage() {
   }, [sessionId, fetchReport]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRetryReport = async () => {
+    isReadyRef.current = false;
     setReportStatus('pending');
     setError('');
     setPollCount(0);
@@ -173,7 +176,7 @@ export default function EndPage() {
           clearInterval(pollRef.current);
           pollRef.current = null;
         }
-        if (mountedRef.current && reportStatus !== 'ready') {
+        if (mountedRef.current && !isReadyRef.current) {
           setReportStatus('failed');
           setError('Report generation timed out. It may still be processing - check your email.');
         }
