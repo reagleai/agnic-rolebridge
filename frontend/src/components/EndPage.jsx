@@ -259,7 +259,7 @@ export default function EndPage() {
                 ? 'Still working on your report - this is taking longer than usual…'
                 : 'Preparing report generation…'}
           </p>
-          <span className="evaluating-sub">Gemini Flash · Agnic AI Gateway</span>
+          <span className="evaluating-sub">Claude Sonnet · Agnic AI Gateway</span>
           {pollCount > 10 && (
             <button className="btn-ghost" onClick={handleRetryReport} style={{ marginTop: '16px' }}>
               Retry Report Generation
