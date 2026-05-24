@@ -28,6 +28,20 @@ import { callAgnicGateway } from "../_shared/v2_llm.ts";
 import { getFreshAgnicToken, refreshAgnicToken } from "../_shared/v2_auth.ts";
 import type { V2User } from "../_shared/v2_auth.ts";
 import type { LLMError } from "../_shared/v2_llm.ts";
+import {
+  REPORT_SYSTEM,
+  buildReportUser,
+} from "../_shared/v2_prompts.ts";
+import {
+  REPORT_WORKER_MAX_TOKENS,
+  REPORT_JD_MAX_CHARS,
+  REPORT_SECTION_TEXT_MAX_CHARS,
+  EMAIL_TIMEOUT_MS,
+  RESEND_FROM_EMAIL_DEFAULT,
+} from "../_shared/v2_config.ts";
+
+// Prompts are imported from ../_shared/v2_prompts.ts
+// Config constants are imported from ../_shared/v2_config.ts
 
 // ── Types ──
 
@@ -55,29 +69,6 @@ interface ReportData {
     points_to_improve: string[];
   };
 }
-
-// ── LLM Prompt ──
-
-const REPORT_SYSTEM = `You are generating a detailed, honest interview evaluation report for a career-transition candidate. Use ONLY evidence from the transcript provided. Score each dimension out of 10.
-
-Return ONLY valid JSON with this exact structure:
-{
-  "opening_summary": "2-3 sentence overview of the candidate's performance",
-  "dimensions": {
-    "clarity": { "score": 1-10, "why": "explanation", "flag": "pass|soft_flag|hard_flag", "transcript_evidence": "relevant quote" },
-    "evidence": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "ownership": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "role_language_transition": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "relevance": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." },
-    "coherence": { "score": 1-10, "why": "...", "flag": "...", "transcript_evidence": "..." }
-  },
-  "overall_impression": {
-    "score": 1-10,
-    "strengths": ["strength 1", "strength 2"],
-    "weaknesses": ["weakness 1"],
-    "points_to_improve": ["improvement 1", "improvement 2"]
-  }
-}`;
 
 // ── Helpers ──
 
@@ -324,8 +315,6 @@ serve(async (req) => {
       const transcript = (session.transcript as Array<Record<string, unknown>>) || [];
       const serialized = serializeTranscript(transcript);
 
-      const userPrompt = `Target JD:\n---\n${(session.jd_text || "").substring(0, 1000)}\n---\nResume section (${session.section_name || "General"}):\n---\n${(session.section_text || "").substring(0, 2000)}\n---\nFull Interview Transcript:\n${serialized}`;
-
       const v2User = user as V2User;
       let agnicToken = await getFreshAgnicToken(v2User);
 
@@ -334,8 +323,13 @@ serve(async (req) => {
           token,
           "report_generation",
           REPORT_SYSTEM,
-          userPrompt,
-          { maxTokens: 4096, jsonMode: true },
+          buildReportUser(
+            (session.jd_text || "").substring(0, REPORT_JD_MAX_CHARS),
+            session.section_name || "General",
+            (session.section_text || "").substring(0, REPORT_SECTION_TEXT_MAX_CHARS),
+            serialized,
+          ),
+          { maxTokens: REPORT_WORKER_MAX_TOKENS, jsonMode: true },
         );
 
       let raw: Record<string, unknown>;
@@ -393,12 +387,12 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: Deno.env.get("RESEND_FROM_EMAIL") || "RoleBridge <reports@protonaiagents.com>",
+            from: Deno.env.get("RESEND_FROM_EMAIL") || RESEND_FROM_EMAIL_DEFAULT,
             to: emailAddr,
             subject: "Your RoleBridge Interview Report",
             html,
           }),
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
         });
 
         if (emailRes.ok) {

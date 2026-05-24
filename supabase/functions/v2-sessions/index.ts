@@ -14,6 +14,7 @@ import {
   authenticateRequest,
   authErrorResponse,
 } from "../_shared/v2_auth.ts";
+import { SESSION_LIMIT } from "../_shared/v2_config.ts";
 
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -58,7 +59,7 @@ serve(async (req) => {
       return jsonResponse({ error: "db_error", message: countError.message }, 500);
     }
 
-    if ((createdCount || 0) >= 50) {
+    if ((createdCount || 0) >= SESSION_LIMIT) {
       return jsonResponse({
         error: "session_limit_reached",
         message: "You have reached the 50-session limit for this account.",

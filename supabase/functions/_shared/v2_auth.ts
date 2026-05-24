@@ -12,6 +12,11 @@
  */
 
 import { getSupabaseClient } from "./db.ts";
+import {
+  TOKEN_EXPIRY_BUFFER_MS,
+  TOKEN_REFRESH_TIMEOUT_MS,
+  AGNIC_TOKEN_ENDPOINT,
+} from "./v2_config.ts";
 
 // ── Types ──
 
@@ -71,7 +76,7 @@ function extractSessionToken(req: Request): string | null {
 export function isTokenExpired(user: V2User): boolean {
   if (!user.token_expires_at) return false; // no expiry known — assume valid
   const expiresAt = new Date(user.token_expires_at).getTime();
-  const buffer = 5 * 60 * 1000; // 5 minute buffer
+  const buffer = TOKEN_EXPIRY_BUFFER_MS;
   return Date.now() >= expiresAt - buffer;
 }
 
@@ -110,11 +115,11 @@ export async function refreshAgnicToken(user: V2User): Promise<string> {
     body.client_secret = clientSecret;
   }
 
-  const res = await fetch("https://api.agnic.ai/oauth/token", {
+  const res = await fetch(AGNIC_TOKEN_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(TOKEN_REFRESH_TIMEOUT_MS),
   });
 
   if (!res.ok) {

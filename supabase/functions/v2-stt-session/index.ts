@@ -20,6 +20,7 @@ import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { getSupabaseClient } from "../_shared/db.ts";
 import { extractSessionId } from "../_shared/validation.ts";
 import { authenticateRequest, authErrorResponse } from "../_shared/v2_auth.ts";
+import { MAX_RECORDING_DURATION_MS_DEFAULT, GLADIA_SESSION_TIMEOUT_MS } from "../_shared/v2_config.ts";
 
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -30,7 +31,7 @@ function jsonResponse(body: unknown, status: number): Response {
 
 function getMaxRecordingMs(): number {
   const parsed = Number.parseInt(Deno.env.get("MAX_RECORDING_DURATION_MS") || "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 600000;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : MAX_RECORDING_DURATION_MS_DEFAULT;
 }
 
 function getRelayWsUrl(reqUrl: string, recordingSessionId: string): string {
@@ -137,7 +138,7 @@ serve(async (req) => {
             receive_partial_transcripts: true,
           },
         }),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(GLADIA_SESSION_TIMEOUT_MS),
       });
     } catch (err) {
       console.error("[v2-stt-session] Gladia network error:", err);

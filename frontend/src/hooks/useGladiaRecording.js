@@ -7,9 +7,9 @@
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { convertFloat32ToInt16, downsampleBuffer, TARGET_SAMPLE_RATE } from '../utils/audioUtils';
+import { GLADIA_HEARTBEAT_MS, GLADIA_FINAL_WAIT_MS } from '../lib/config.js';
 
-const HEARTBEAT_MS = 15000;
-const FINAL_WAIT_MS = 2000;
+// GLADIA_HEARTBEAT_MS and GLADIA_FINAL_WAIT_MS are imported from ../lib/config.js
 
 function getAudioContextCtor() {
   return window.AudioContext || window.webkitAudioContext;
@@ -285,7 +285,7 @@ export default function useGladiaRecording() {
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'heartbeat', sent_at: new Date().toISOString() }));
               }
-            }, HEARTBEAT_MS);
+            }, GLADIA_HEARTBEAT_MS);
           }
 
           isRecordingRef.current = true;
@@ -339,7 +339,7 @@ export default function useGladiaRecording() {
       };
       stopTimeoutRef.current = setTimeout(() => {
         teardownVoiceSession('final_transcript_timeout');
-      }, FINAL_WAIT_MS);
+      }, GLADIA_FINAL_WAIT_MS);
     });
   }, [sendStopSignal, teardownVoiceSession]);
 

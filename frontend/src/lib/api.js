@@ -10,6 +10,13 @@
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
+import {
+  V2_REQUEST_DEFAULT_TIMEOUT_MS,
+  SETUP_TIMEOUT_MS,
+  API_MAX_RETRIES,
+  API_RETRY_DELAY_MS,
+} from './config.js';
+
 const BASE_URL = `${SUPABASE_URL}/functions/v1`;
 
 // ── V1 request helper (unchanged) ──
@@ -47,7 +54,7 @@ async function request(path, options = {}) {
 // Still sends the Supabase anon key in Authorization (required by Supabase
 // Edge Functions for routing) but the actual auth is via x-rb-session.
 
-async function withRetry(fn, maxRetries = 2, delayMs = 1500) {
+async function withRetry(fn, maxRetries = API_MAX_RETRIES, delayMs = API_RETRY_DELAY_MS) {
   for (let i = 0; i <= maxRetries; i++) {
     try {
       return await fn();
@@ -58,7 +65,7 @@ async function withRetry(fn, maxRetries = 2, delayMs = 1500) {
   }
 }
 
-async function v2request(path, options = {}, timeoutMs = 45_000) {
+async function v2request(path, options = {}, timeoutMs = V2_REQUEST_DEFAULT_TIMEOUT_MS) {
   const url = `${BASE_URL}${path}`;
   const rbToken = localStorage.getItem("rb_session_token") || "";
 
@@ -192,7 +199,7 @@ export function v2SetupSession(id, payload) {
   return withRetry(() => v2request(`/v2-session-setup/${id}`, {
     method: "POST",
     body: JSON.stringify(payload),
-  }, 60_000)); // give setup more time for LLM calls
+  }, SETUP_TIMEOUT_MS)); // give setup more time for LLM calls
 }
 
 /** GET /v2-session-get/:id - rehydrate V2 session state */

@@ -18,6 +18,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { authenticateRequest, authErrorResponse } from "../_shared/v2_auth.ts";
+import {
+  AGNIC_BALANCE_ENDPOINT,
+  BALANCE_FETCH_TIMEOUT_MS,
+} from "../_shared/v2_config.ts";
 
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -51,13 +55,13 @@ serve(async (req) => {
     }
 
     // ── Proxy to Agnic Balance API ──
-    const agnicRes = await fetch("https://api.agnic.ai/api/balance", {
+    const agnicRes = await fetch(AGNIC_BALANCE_ENDPOINT, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${agnicToken}`,
         "Content-Type": "application/json",
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(BALANCE_FETCH_TIMEOUT_MS),
     });
 
     if (!agnicRes.ok) {

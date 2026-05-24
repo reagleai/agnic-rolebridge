@@ -12,6 +12,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { authenticateRequest, authErrorResponse } from "../_shared/v2_auth.ts";
+import {
+  AGNIC_BALANCE_ENDPOINT,
+  AUTH_ME_BALANCE_TIMEOUT_MS,
+} from "../_shared/v2_config.ts";
 
 serve(async (req) => {
   // CORS preflight
@@ -32,9 +36,9 @@ serve(async (req) => {
     // Optionally fetch live balance from Agnic
     let balanceValue: number | null = null;
     try {
-      const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
+      const balanceRes = await fetch(AGNIC_BALANCE_ENDPOINT, {
         headers: { Authorization: `Bearer ${agnicToken}` },
-        signal: AbortSignal.timeout(5_000),
+        signal: AbortSignal.timeout(AUTH_ME_BALANCE_TIMEOUT_MS),
       });
       if (balanceRes.ok) {
         const balanceData = await balanceRes.json();

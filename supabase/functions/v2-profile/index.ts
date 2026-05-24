@@ -14,6 +14,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { getSupabaseClient } from "../_shared/db.ts";
 import { authenticateRequest, authErrorResponse } from "../_shared/v2_auth.ts";
+import {
+  MAX_PROFILE_RESUME_LEN,
+  MAX_PROFILE_NOTES_LEN,
+  MAX_PROFILE_FIELD_LEN,
+} from "../_shared/v2_config.ts";
 
 // Allowed profile fields — reject anything else
 const ALLOWED_FIELDS = [
@@ -51,7 +56,7 @@ function sanitize(body: Record<string, unknown>): Record<string, string | null> 
         clean[key] = null;
       } else if (typeof val === "string") {
         // Max lengths per field
-        const maxLen = key === "resume_text" ? 50_000 : key === "transition_notes" ? 5_000 : 500;
+        const maxLen = key === "resume_text" ? MAX_PROFILE_RESUME_LEN : key === "transition_notes" ? MAX_PROFILE_NOTES_LEN : MAX_PROFILE_FIELD_LEN;
         clean[key] = val.trim().substring(0, maxLen);
       }
       // Silently drop non-string values

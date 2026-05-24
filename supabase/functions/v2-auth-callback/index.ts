@@ -16,6 +16,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import { getSupabaseClient } from "../_shared/db.ts";
+import {
+  AGNIC_TOKEN_ENDPOINT,
+  AGNIC_ME_ENDPOINT,
+  AGNIC_USERINFO_ENDPOINT,
+  AGNIC_BALANCE_ENDPOINT,
+  AUTH_CODE_EXCHANGE_TIMEOUT_MS,
+  AUTH_USERINFO_TIMEOUT_MS,
+} from "../_shared/v2_config.ts";
 
 serve(async (req) => {
   // CORS preflight
@@ -59,7 +67,7 @@ serve(async (req) => {
       );
     }
 
-    const tokenRes = await fetch("https://api.agnic.ai/oauth/token", {
+    const tokenRes = await fetch(AGNIC_TOKEN_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -69,7 +77,7 @@ serve(async (req) => {
         client_id: clientId,
         client_secret: clientSecret,
       }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(AUTH_CODE_EXCHANGE_TIMEOUT_MS),
     });
 
     if (!tokenRes.ok) {
@@ -127,9 +135,9 @@ serve(async (req) => {
     // Source 3: Try Agnic /api/me endpoint (common convention)
     if (!agnicEmail) {
       try {
-        const meRes = await fetch("https://api.agnic.ai/api/me", {
+        const meRes = await fetch(AGNIC_ME_ENDPOINT, {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(AUTH_USERINFO_TIMEOUT_MS),
         });
         if (meRes.ok) {
           const meData = await meRes.json();
@@ -144,9 +152,9 @@ serve(async (req) => {
     // Source 4: Try standard OpenID Connect /userinfo
     if (!agnicEmail) {
       try {
-        const userinfoRes = await fetch("https://api.agnic.ai/userinfo", {
+        const userinfoRes = await fetch(AGNIC_USERINFO_ENDPOINT, {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(AUTH_USERINFO_TIMEOUT_MS),
         });
         if (userinfoRes.ok) {
           const userinfoData = await userinfoRes.json();
@@ -161,9 +169,9 @@ serve(async (req) => {
     // Source 5: Try the balance endpoint (original approach)
     if (!agnicEmail) {
       try {
-        const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
+        const balanceRes = await fetch(AGNIC_BALANCE_ENDPOINT, {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(AUTH_USERINFO_TIMEOUT_MS),
         });
         if (balanceRes.ok) {
           const balanceData = await balanceRes.json();
@@ -177,9 +185,9 @@ serve(async (req) => {
     } else {
       // Still fetch balance even if we already have email
       try {
-        const balanceRes = await fetch("https://api.agnic.ai/api/balance", {
+        const balanceRes = await fetch(AGNIC_BALANCE_ENDPOINT, {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(AUTH_USERINFO_TIMEOUT_MS),
         });
         if (balanceRes.ok) {
           const balanceData = await balanceRes.json();

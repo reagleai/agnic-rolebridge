@@ -26,6 +26,22 @@ import { extractSessionId } from "../_shared/validation.ts";
 import { authenticateRequest, authErrorResponse } from "../_shared/v2_auth.ts";
 import { callAgnicGateway, llmErrorResponse } from "../_shared/v2_llm.ts";
 import type { LLMError } from "../_shared/v2_llm.ts";
+import {
+  ANSWER_EVAL_SYSTEM,
+  buildAnswerEvalUser,
+} from "../_shared/v2_prompts.ts";
+import {
+  ANSWER_MIN_LEN,
+  MAX_ANSWER_DURATION_SECS,
+  MAX_FOLLOWUP_DEPTH,
+  ABSOLUTE_CAP_MULTIPLIER,
+  RECENT_TRANSCRIPT_TURNS,
+  SECTION_TEXT_MAX_CHARS,
+  JD_TEXT_MAX_CHARS,
+} from "../_shared/v2_config.ts";
+
+// Prompts are imported from ../_shared/v2_prompts.ts
+// Config constants are imported from ../_shared/v2_config.ts
 
 // ── Types ──
 
@@ -56,43 +72,6 @@ interface EvalResult {
   followup_question?: { id: string; text: string } | null;
   eval_notes?: string;
 }
-
-// ── LLM Prompts ──
-
-const ANSWER_EVAL_SYSTEM = `You are an interview answer evaluator. You assess candidate responses on 6 dimensions:
-
-1. clarity - Was the answer clear and well-structured?
-2. evidence - Did the candidate provide specific examples or data?
-3. ownership - Did the candidate demonstrate personal ownership of outcomes?
-4. role_language - Did the candidate use language relevant to the target role?
-5. relevance - Was the answer relevant to the question asked?
-6. coherence - Was the answer internally consistent and logical?
-
-For each dimension, assign a flag: "pass", "soft_flag", or "hard_flag".
-
-Then determine:
-- needs_followup: boolean - true if the answer needs deeper probing
-- followup_reason: string - why a followup is needed (or empty)
-- next_action: "followup" | "next_question" - your recommendation (backend may override)
-- followup_question: { "id": "f_<6 random chars>", "text": "<followup question>" } | null
-- eval_notes: string - brief evaluator notes
-
-Return ONLY valid JSON. No markdown fences. Format:
-{
-  "eval": {
-    "clarity": "pass|soft_flag|hard_flag",
-    "evidence": "pass|soft_flag|hard_flag",
-    "ownership": "pass|soft_flag|hard_flag",
-    "role_language": "pass|soft_flag|hard_flag",
-    "relevance": "pass|soft_flag|hard_flag",
-    "coherence": "pass|soft_flag|hard_flag",
-    "needs_followup": true|false,
-    "followup_reason": "..."
-  },
-  "next_action": "followup|next_question",
-  "followup_question": { "id": "f_xxxxxx", "text": "..." } | null,
-  "eval_notes": "..."
-}`;
 
 // ── Helpers ──
 
@@ -146,8 +125,8 @@ function determineNextAction(
   questionIndex: number,
   coreQuestionsLength: number,
 ): "followup" | "next_question" | "end_session" {
-  // Hard rule 0: absolute cap — total answers must not exceed 2× core count
-  const absoluteCap = coreQuestionsLength * 2;
+  // Hard rule 0: absolute cap — total answers must not exceed ABSOLUTE_CAP_MULTIPLIER× core count
+  const absoluteCap = coreQuestionsLength * ABSOLUTE_CAP_MULTIPLIER;
   if (totalQuestions + 1 >= absoluteCap) {
     return "end_session";
   }
@@ -155,8 +134,8 @@ function determineNextAction(
   if (coreQuestionsLength <= 0 || questionIndex >= coreQuestionsLength) {
     return "end_session";
   }
-  // Hard rule 2: followup depth cap (max 1 followup per core question)
-  if (llmAction === "followup" && followupDepth >= 1) {
+  // Hard rule 2: followup depth cap (max MAX_FOLLOWUP_DEPTH followups per core question)
+  if (llmAction === "followup" && followupDepth >= MAX_FOLLOWUP_DEPTH) {
     return "next_question";
   }
   // Hard rule 3: core exhaustion — no more core questions to advance to
@@ -170,7 +149,7 @@ function determineNextAction(
   return llmAction as "followup" | "next_question" | "end_session";
 }
 
-function getRecentTranscript(transcript: TranscriptTurn[], maxTurns = 8): TranscriptTurn[] {
+function getRecentTranscript(transcript: TranscriptTurn[], maxTurns = RECENT_TRANSCRIPT_TURNS): TranscriptTurn[] {
   return transcript.slice(Math.max(0, transcript.length - maxTurns));
 }
 
@@ -260,7 +239,7 @@ serve(async (req) => {
     if (
       !answer_text ||
       typeof answer_text !== "string" ||
-      answer_text.trim().length < 3
+      answer_text.trim().length < ANSWER_MIN_LEN
     ) {
       return jsonResponse({ error: "answer_too_short" }, 400);
     }
@@ -268,7 +247,7 @@ serve(async (req) => {
       return jsonResponse({ error: "invalid_input_type" }, 400);
     }
     const duration = Number(duration_seconds);
-    if (!Number.isFinite(duration) || duration < 0 || duration > 300) {
+    if (!Number.isFinite(duration) || duration < 0 || duration > MAX_ANSWER_DURATION_SECS) {
       return jsonResponse({ error: "invalid_duration" }, 400);
     }
 
@@ -294,10 +273,20 @@ serve(async (req) => {
       const coreRemaining =
         Math.max(0, coreQuestions.length - session.question_index - 1);
       const recentTranscript = getRecentTranscript(transcript);
-      const userPrompt = `Resume section (${session.section_name}):\n---\n${(session.section_text || "").substring(0, 2500)}\n---\nTarget JD:\n---\n${(session.jd_text || "").substring(0, 1000)}\n---\nRecent transcript (last up to 4 Q/A turns):\n${serializeTranscript(recentTranscript)}\n---\nCurrent question: ${transcript.find(
-        (t: TranscriptTurn) =>
-          t.question_id === question_id && t.type === "question",
-      )?.text || ""}\nCandidate answer: ${answer_text}\n---\nCurrent followup depth: ${session.followup_depth}\nTotal answers completed before this answer: ${session.total_questions}\nRemaining core questions: ${coreRemaining}`;
+      const userPrompt = buildAnswerEvalUser(
+        session.section_name,
+        (session.section_text || "").substring(0, SECTION_TEXT_MAX_CHARS),
+        (session.jd_text || "").substring(0, JD_TEXT_MAX_CHARS),
+        serializeTranscript(recentTranscript),
+        transcript.find(
+          (t: TranscriptTurn) =>
+            t.question_id === question_id && t.type === "question",
+        )?.text || "",
+        answer_text,
+        session.followup_depth,
+        session.total_questions,
+        coreRemaining,
+      );
 
       const raw = await callAgnicGateway(
         agnicToken,

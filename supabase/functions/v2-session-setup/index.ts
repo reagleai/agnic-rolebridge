@@ -22,39 +22,29 @@ import { extractSessionId, validateSectionName } from "../_shared/validation.ts"
 import { authenticateRequest, authErrorResponse } from "../_shared/v2_auth.ts";
 import { callAgnicGateway, llmErrorResponse } from "../_shared/v2_llm.ts";
 import type { LLMError } from "../_shared/v2_llm.ts";
+import {
+  SECTION_EXTRACTION_SYSTEM,
+  buildSectionExtractionUser,
+  QUESTION_GEN_SYSTEM,
+  buildQuestionGenUser,
+} from "../_shared/v2_prompts.ts";
+import {
+  MIN_RESUME_LEN,
+  MIN_JD_LEN,
+  MIN_QUESTION_COUNT,
+  MAX_QUESTION_COUNT,
+  DEFAULT_QUESTION_COUNT,
+  MAX_TOKENS_EXTENDED,
+  EXTENDED_TOKEN_QUESTION_THRESHOLD,
+  SECTION_NOT_FOUND_MIN_LEN,
+  MIN_SESSION_DURATION_SECS,
+  MAX_SESSION_DURATION_SECS,
+  SECS_PER_QUESTION,
+  MIN_QUESTIONS_RETURNED,
+} from "../_shared/v2_config.ts";
 
-// ── LLM Prompts ──
-
-const SECTION_EXTRACTION_SYSTEM = `You are a resume parser. Extract the text belonging to the specified section from the resume.
-
-IMPORTANT: Section headers in resumes vary. Use these mappings:
-- "Work Experience" = any of: EXPERIENCE, WORK EXPERIENCE, PROFESSIONAL EXPERIENCE, WORK HISTORY, EMPLOYMENT, EMPLOYMENT HISTORY, CAREER HISTORY, PROFESSIONAL BACKGROUND, HISTORY
-- "Projects" = any of: PROJECTS, PERSONAL PROJECTS, SIDE PROJECTS, ACADEMIC PROJECTS, KEY PROJECTS, SELECTED PROJECTS, OTHER PROJECTS
-- "Skills" = any of: SKILLS, TECHNICAL SKILLS, CORE COMPETENCIES, TECHNOLOGIES, TOOLS & TECHNOLOGIES, TOOLS AND TECHNOLOGIES, EXPERTISE, COMPETENCIES
-
-Extract ALL content under the matching section header until the next major section header begins.
-
-Return ONLY valid JSON: {"section_text": "<extracted text>"}
-If genuinely no matching section exists, return: {"section_text": "NOTFOUND"}`;
-
-const QUESTION_GEN_SYSTEM = `You are an expert interview coach preparing interview questions for a career-transition candidate. You have access to a specific section of their resume and the target job description.
-
-Your job is to generate interview questions that:
-1. Are directly grounded in specific claims or experiences in the resume section.
-2. Test whether the candidate can translate their experience into terms relevant to the target role.
-3. Are open-ended and structured so a strong answer takes under 60 seconds.
-4. Probe ownership, evidence, and role relevance — not just description.
-5. Cover a diverse range of competencies (technical depth, leadership, problem-solving, stakeholder management, metrics/impact).
-
-Return ONLY valid JSON. No explanation. No markdown fences. Format:
-{"questions": [
-  {
-    "id": "q_<6 random alphanumeric chars>",
-    "text": "<question text>",
-    "intent": "<one of: ownership_and_evidence | role_language_transition | coherence_probe | relevance_check | technical_depth | leadership_impact | problem_solving>",
-    "resume_anchor": "<the exact phrase from the resume section this question is grounded in>"
-  }
-]}`;
+// Prompts are imported from ../_shared/v2_prompts.ts
+// Config constants are imported from ../_shared/v2_config.ts
 
 // ── Helpers ──
 
@@ -146,16 +136,16 @@ serve(async (req) => {
     const body = await req.json();
     const { resume_text, jd_text, section_name, question_count } = body;
 
-    if (!resume_text || typeof resume_text !== "string" || resume_text.length < 50) {
-      return jsonResponse({ error: "resume_too_short", message: "Resume text must be at least 50 characters." }, 400);
+    if (!resume_text || typeof resume_text !== "string" || resume_text.length < MIN_RESUME_LEN) {
+      return jsonResponse({ error: "resume_too_short", message: `Resume text must be at least ${MIN_RESUME_LEN} characters.` }, 400);
     }
 
-    if (!jd_text || typeof jd_text !== "string" || jd_text.length < 50) {
-      return jsonResponse({ error: "jd_too_short", message: "Job description must be at least 50 characters." }, 400);
+    if (!jd_text || typeof jd_text !== "string" || jd_text.length < MIN_JD_LEN) {
+      return jsonResponse({ error: "jd_too_short", message: `Job description must be at least ${MIN_JD_LEN} characters.` }, 400);
     }
 
     // Validate question count (6-15, default 6)
-    const qCount = Math.max(6, Math.min(15, parseInt(question_count) || 6));
+    const qCount = Math.max(MIN_QUESTION_COUNT, Math.min(MAX_QUESTION_COUNT, parseInt(question_count) || DEFAULT_QUESTION_COUNT));
 
     // Validate section name — allow "Full Resume" as a special case
     let canonicalSection: string;
@@ -186,12 +176,12 @@ serve(async (req) => {
           agnicToken,
           "section_extraction",
           SECTION_EXTRACTION_SYSTEM,
-          `Resume text:\n---\n${resume_text}\n---\nExtract the section named: ${canonicalSection}`,
+          buildSectionExtractionUser(resume_text, canonicalSection),
         );
 
         sectionText = (extractionResult as { section_text?: string }).section_text || "";
 
-        if (!sectionText || sectionText === "NOTFOUND" || sectionText.trim().length < 20) {
+        if (!sectionText || sectionText === "NOTFOUND" || sectionText.trim().length < SECTION_NOT_FOUND_MIN_LEN) {
           console.warn(`[v2-session-setup] Section '${canonicalSection}' not found: '${sectionText?.slice(0, 100)}'`);
           return jsonResponse(
             {
@@ -225,14 +215,14 @@ serve(async (req) => {
         agnicToken,
         "question_generation",
         QUESTION_GEN_SYSTEM,
-        `Resume section (${canonicalSection}):\n---\n${sectionText}\n---\nTarget JD:\n---\n${jd_text}\n---\nGenerate exactly ${qCount} core interview questions. Each question should cover a different competency area.`,
-        { maxTokens: qCount > 10 ? 4096 : 3000 },
+        buildQuestionGenUser(canonicalSection, sectionText, jd_text, qCount),
+        { maxTokens: qCount > EXTENDED_TOKEN_QUESTION_THRESHOLD ? MAX_TOKENS_EXTENDED : undefined },
       );
 
       // Parse response
       const raw = (genResult as { questions?: unknown }).questions || genResult;
 
-      if (!Array.isArray(raw) || raw.length < Math.min(qCount, 4)) {
+      if (!Array.isArray(raw) || raw.length < Math.min(qCount, MIN_QUESTIONS_RETURNED)) {
         throw new Error(`LLM returned too few questions: expected ${qCount}, got ${Array.isArray(raw) ? raw.length : 'non-array'}`);
       }
 
@@ -278,7 +268,7 @@ serve(async (req) => {
 
     // ── Calculate session duration ──
     // Dynamic: min 8min, max 20min, ~80sec per question
-    const durationSeconds = Math.min(20 * 60, Math.max(8 * 60, qCount * 80));
+    const durationSeconds = Math.min(MAX_SESSION_DURATION_SECS, Math.max(MIN_SESSION_DURATION_SECS, qCount * SECS_PER_QUESTION));
     const expiresAt = new Date(Date.now() + durationSeconds * 1000).toISOString();
 
     // ── Persist ──

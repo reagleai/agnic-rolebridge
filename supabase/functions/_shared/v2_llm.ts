@@ -11,9 +11,21 @@
  * Attribution: X-Partner-Id header for commission accrual
  */
 
-// ── Default model — single model for all tasks (Pay-As-You-Go) ──
+import {
+  DEFAULT_MODEL,
+  AGNIC_GATEWAY_URL,
+  LLM_MAX_RETRIES,
+  LLM_RETRY_DELAY_MS,
+  TEMPERATURE_TASK,
+  TEMPERATURE_REPORT,
+  MAX_TOKENS_TASK,
+  MAX_TOKENS_REPORT,
+  TIMEOUT_TASK_MS,
+  TIMEOUT_REPORT_MS,
+} from "./v2_config.ts";
 
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+// ── Default model — single model for all tasks (Pay-As-You-Go) ──
+// Defined in v2_config.ts as DEFAULT_MODEL.
 
 // Allow per-task overrides via env vars (same pattern as V1)
 const ENV_KEY_MAP: Record<string, string> = {
@@ -57,8 +69,8 @@ export interface LLMError {
 
 // ── Main LLM call wrapper ──
 
-const AGNIC_GATEWAY_URL = "https://api.agnic.ai/v1/chat/completions";
-const MAX_RETRIES = 1;
+// AGNIC_GATEWAY_URL and LLM_MAX_RETRIES are imported from v2_config.ts.
+const MAX_RETRIES = LLM_MAX_RETRIES;
 
 /**
  * Call an LLM via the Agnic AI Gateway using the user's OAuth token.
@@ -88,8 +100,8 @@ export async function callAgnicGateway(
 
   const partnerId = Deno.env.get("AGNIC_PARTNER_ID");
 
-  const temperature = options?.temperature ?? (isReport ? 0.4 : 0.3);
-  const maxTokens = options?.maxTokens ?? (isReport ? 3000 : 2048);
+  const temperature = options?.temperature ?? (isReport ? TEMPERATURE_REPORT : TEMPERATURE_TASK);
+  const maxTokens = options?.maxTokens ?? (isReport ? MAX_TOKENS_REPORT : MAX_TOKENS_TASK);
   const wantsJsonMode = options?.jsonMode !== false; // default true
   const supportsJsonResponseFormat = !/(anthropic|claude)/i.test(model);
 
@@ -125,7 +137,7 @@ export async function callAgnicGateway(
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(isReport ? 90_000 : 60_000),
+      signal: AbortSignal.timeout(isReport ? TIMEOUT_REPORT_MS : TIMEOUT_TASK_MS),
     });
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === "TimeoutError") {
@@ -164,7 +176,7 @@ export async function callAgnicGateway(
   // ── 429: Rate limited ──
   if (res.status === 429) {
     if (retryCount < MAX_RETRIES) {
-      await delay(4000);
+      await delay(LLM_RETRY_DELAY_MS);
       return callAgnicGateway(
         agnicToken,
         task,

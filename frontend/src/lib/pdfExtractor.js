@@ -3,13 +3,14 @@
  * Block D - frontend/src/lib/pdfExtractor.js
  */
 import * as pdfjsLib from 'pdfjs-dist';
+import { MAX_PDF_SIZE, MIN_PDF_TEXT_LEN } from './config.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+// MAX_PDF_SIZE and MIN_PDF_TEXT_LEN are imported from ./config.js
 
 export async function extractTextFromPDF(file) {
-  if (file.size > MAX_SIZE) {
+  if (file.size > MAX_PDF_SIZE) {
     throw new Error('pdf_too_large');
   }
 
@@ -30,7 +31,7 @@ export async function extractTextFromPDF(file) {
   }
 
   const fullText = pages.join('\n').trim();
-  if (fullText.length < 200) {
+  if (fullText.length < MIN_PDF_TEXT_LEN) {
     throw new Error('pdf_no_text');
   }
 
