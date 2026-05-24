@@ -293,90 +293,70 @@ export default function EndPage() {
       {reportStatus === 'ready' && report && (
         <div className="report-container report-container--visible">
 
-          {/* Summary */}
-          <div className="report-summary">
-            <p className="report-summary__text">"{report.opening_summary}"</p>
-          </div>
-
-          {/* Overall score */}
-          <div className="report-overall">
-            <div className="report-overall__ring">
-              <ScoreRing score={report.overall_impression?.score || 0} size={120} />
-              <div className="report-overall__score-overlay">
-                <span className="report-overall__num">{report.overall_impression?.score || 0}</span>
-                <span className="report-overall__denom">/10</span>
-              </div>
+          <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'left', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+            
+            {/* Summary */}
+            <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 8px', color: '#00E5A0' }}>Summary</h2>
+              <p style={{ color: '#94A3B8', fontSize: '14px', lineHeight: '1.6', margin: '0' }}>{report.opening_summary}</p>
             </div>
-            <div className="report-overall__label">Overall Impression</div>
-          </div>
 
-          {/* 6 Dimensions */}
-          <h3 className="report-section-heading">Dimension Scores</h3>
-          <div className="report-dimensions">
-            {dims.map((d, i) => (
-              <div key={i} className={`report-dim ${d.flag === 'soft_flag' || d.flag === 'hard_flag' ? 'report-dim--flagged' : ''}`}>
-                <div className="report-dim__header">
-                  <div className="report-dim__score-row">
-                    <ScoreRing score={d.score || 0} size={64} />
-                    <div className="report-dim__score-num-wrap">
-                      <span className="report-dim__score-num">{d.score || 0}</span>
-                      <span className="report-dim__score-denom">/10</span>
-                    </div>
-                  </div>
-                  <div className="report-dim__info">
-                    <div className="report-dim__name">
-                      {d.name}
-                      {d.flag && (
-                        <span className={`report-dim__flag ${d.flag === 'pass' ? 'report-dim__flag--pass' : ''}`} style={d.flag === 'pass' ? {color: '#00E5A0', borderColor: 'rgba(0, 229, 160, 0.2)', background: 'rgba(0, 229, 160, 0.1)'} : {}}>
-                          {d.flag === 'pass' ? '● Pass' : `⚑ ${d.flag === 'hard_flag' ? 'Critical' : 'Needs work'}`}
-                        </span>
-                      )}
-                    </div>
-                    <p className="report-dim__why">{d.why}</p>
-                  </div>
-                </div>
-                {d.transcript_evidence && (
-                  <div className="report-dim__evidence">
-                    <span className="report-dim__evidence-label">Evidence from transcript:</span>
-                    <span className="report-dim__evidence-text">{d.transcript_evidence}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+            {/* Overall Score */}
+            <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', padding: '20px', marginBottom: '24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '48px', fontWeight: '700', color: '#00E5A0' }}>{report.overall_impression?.score || 0}/10</div>
+              <p style={{ color: '#94A3B8', fontSize: '14px', margin: '4px 0 0' }}>Overall Score</p>
+            </div>
 
-          {/* Strengths / Weaknesses / Improvements */}
-          <div className="report-swi">
-            <div className="report-swi__col">
-              <h4 className="report-swi__heading report-swi__heading--strength">Strengths</h4>
-              <ul className="report-swi__list">
+            {/* Dimensions */}
+            <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px' }}>
+              <div style={{ padding: '16px 16px 8px' }}><h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0', color: '#00E5A0' }}>Dimension Scores</h2></div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <tbody>
+                  {dims.map((d, i) => {
+                    const flagColor = d.flag === "pass" ? "#00E5A0" : d.flag === "soft_flag" ? "#FBBF24" : "#EF4444";
+                    const flagLabel = d.flag === "pass" ? "Pass" : d.flag === "soft_flag" ? "Needs Work" : "Critical";
+                    return (
+                      <tr key={i}>
+                        <td style={{ padding: '12px 16px', borderBottom: '1px solid #2A344A', fontWeight: '600', color: '#E2E8F0', width: '200px', verticalAlign: 'top' }}>
+                          {d.name}
+                          <br /><span style={{ fontSize: '12px', fontWeight: '400', color: flagColor }}>● {flagLabel}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', borderBottom: '1px solid #2A344A', textAlign: 'center', fontSize: '20px', fontWeight: '700', color: '#00E5A0', width: '80px', verticalAlign: 'top' }}>
+                          {d.score}/10
+                        </td>
+                        <td style={{ padding: '12px 16px', borderBottom: '1px solid #2A344A', color: '#94A3B8', lineHeight: '1.5', verticalAlign: 'top' }}>
+                          {d.why}
+                          {d.transcript_evidence && (
+                            <>
+                              <br /><span style={{ display: 'inline-block', marginTop: '6px', padding: '6px 10px', background: 'rgba(0, 229, 160, 0.05)', borderLeft: '3px solid #00E5A0', fontStyle: 'italic', fontSize: '13px', color: '#94A3B8' }}>"{d.transcript_evidence}"</span>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Strengths / Areas for Improvement / Points to Improve */}
+            <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Strengths</h2>
+              <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#33FFB8', fontSize: '14px' }}>
                 {(report.overall_impression?.strengths || []).map((s, i) => (
-                  <li key={i} className="report-swi__item">
-                    <span className="report-swi__marker report-swi__marker--strength">✓</span>
-                    {s}
-                  </li>
+                  <li key={i} style={{ marginBottom: '6px' }}>{s}</li>
                 ))}
               </ul>
-            </div>
-            <div className="report-swi__col">
-              <h4 className="report-swi__heading report-swi__heading--weak">Areas for Improvement</h4>
-              <ul className="report-swi__list">
+              <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Areas for Improvement</h2>
+              <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#FBBF24', fontSize: '14px' }}>
                 {(report.overall_impression?.weaknesses || []).map((w, i) => (
-                  <li key={i} className="report-swi__item">
-                    <span className="report-swi__marker report-swi__marker--weak">✗</span>
-                    {w}
-                  </li>
+                  <li key={i} style={{ marginBottom: '6px' }}>{w}</li>
                 ))}
               </ul>
-            </div>
-            <div className="report-swi__col">
-              <h4 className="report-swi__heading report-swi__heading--improve">Points to Improve</h4>
-              <ul className="report-swi__list">
+              <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Key Points to Improve</h2>
+              <ul style={{ paddingLeft: '20px', margin: '0', color: '#94A3B8', fontSize: '14px', lineHeight: '1.5' }}>
                 {(report.overall_impression?.points_to_improve || []).map((p, i) => (
-                  <li key={i} className="report-swi__item">
-                    <span className="report-swi__marker report-swi__marker--improve">→</span>
-                    {p}
-                  </li>
+                  <li key={i} style={{ marginBottom: '6px' }}>{p}</li>
                 ))}
               </ul>
             </div>
