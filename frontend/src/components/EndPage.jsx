@@ -232,7 +232,7 @@ export default function EndPage() {
             <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
         </div>
-        <h1 className="end-header__title">Interview Complete</h1>
+        <h1 className="end-header__title">RoleBridge Evaluation</h1>
         <p className="end-header__meta">
           Section: <strong>{sectionName}</strong>
           {questionCount > 0 && <> · {questionCount} questions answered</>}
@@ -326,9 +326,9 @@ export default function EndPage() {
                   <div className="report-dim__info">
                     <div className="report-dim__name">
                       {d.name}
-                      {(d.flag === 'soft_flag' || d.flag === 'hard_flag') && (
-                        <span className="report-dim__flag">
-                          ⚑ {d.flag === 'hard_flag' ? 'Critical' : 'Needs work'}
+                      {d.flag && (
+                        <span className={`report-dim__flag ${d.flag === 'pass' ? 'report-dim__flag--pass' : ''}`} style={d.flag === 'pass' ? {color: '#00E5A0', borderColor: 'rgba(0, 229, 160, 0.2)', background: 'rgba(0, 229, 160, 0.1)'} : {}}>
+                          {d.flag === 'pass' ? '● Pass' : `⚑ ${d.flag === 'hard_flag' ? 'Critical' : 'Needs work'}`}
                         </span>
                       )}
                     </div>
@@ -359,7 +359,7 @@ export default function EndPage() {
               </ul>
             </div>
             <div className="report-swi__col">
-              <h4 className="report-swi__heading report-swi__heading--weak">Weaknesses</h4>
+              <h4 className="report-swi__heading report-swi__heading--weak">Areas for Improvement</h4>
               <ul className="report-swi__list">
                 {(report.overall_impression?.weaknesses || []).map((w, i) => (
                   <li key={i} className="report-swi__item">
