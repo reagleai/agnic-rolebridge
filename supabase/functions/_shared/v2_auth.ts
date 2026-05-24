@@ -5,7 +5,7 @@
  * Validates inbound requests against the v2_users table using
  * the RoleBridge session token (x-rb-session header or cookie).
  *
- * The Agnic access_token is NEVER sent to the frontend — only
+ * The Agnic access_token is NEVER sent to the frontend - only
  * the rb_session_token travels between browser and Edge Function.
  * This module resolves it to the full user record + Agnic token
  * so downstream functions can make Agnic Gateway calls.
@@ -74,7 +74,7 @@ function extractSessionToken(req: Request): string | null {
  * Returns true if the token expires within the next 5 minutes.
  */
 export function isTokenExpired(user: V2User): boolean {
-  if (!user.token_expires_at) return false; // no expiry known — assume valid
+  if (!user.token_expires_at) return false; // no expiry known - assume valid
   const expiresAt = new Date(user.token_expires_at).getTime();
   const buffer = TOKEN_EXPIRY_BUFFER_MS;
   return Date.now() >= expiresAt - buffer;

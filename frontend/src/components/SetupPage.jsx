@@ -1,5 +1,5 @@
 /**
- * RoleBridge V2 — Setup Page
+ * RoleBridge V2 - Setup Page
  * Block 2: Wired to real V2 backend.
  *
  * Three resume input modes: PDF upload | Paste text | Import from Profile

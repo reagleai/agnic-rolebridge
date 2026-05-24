@@ -3,7 +3,7 @@
  * Block 2 - supabase/functions/v2-sessions/index.ts
  *
  * Creates a row in the `sessions` table linked to the authenticated
- * v2_user via the `v2_user_id` FK. No email argument needed — the
+ * v2_user via the `v2_user_id` FK. No email argument needed - the
  * email is read from the user record.
  */
 

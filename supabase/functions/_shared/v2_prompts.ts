@@ -1,5 +1,5 @@
 /**
- * V2 LLM Prompts — All system prompts in one place.
+ * V2 LLM Prompts - All system prompts in one place.
  * _shared/v2_prompts.ts
  *
  * To edit any prompt, change it here. No other file needs to be touched.
@@ -18,7 +18,7 @@
  */
 
 // ─────────────────────────────────────────────
-// Section Extraction (v2-session-setup — LLM Call 1)
+// Section Extraction (v2-session-setup - LLM Call 1)
 // ─────────────────────────────────────────────
 
 export const SECTION_EXTRACTION_SYSTEM = `You are a resume parser. Extract the text belonging to the specified section from the resume.
@@ -46,7 +46,7 @@ export function buildSectionExtractionUser(
 }
 
 // ─────────────────────────────────────────────
-// Question Generation (v2-session-setup — LLM Call 2)
+// Question Generation (v2-session-setup - LLM Call 2)
 // ─────────────────────────────────────────────
 
 export const QUESTION_GEN_SYSTEM = `You are an expert interview coach preparing interview questions for a career-transition candidate. You have access to a specific section of their resume and the target job description.
@@ -55,7 +55,7 @@ Your job is to generate interview questions that:
 1. Are directly grounded in specific claims or experiences in the resume section.
 2. Test whether the candidate can translate their experience into terms relevant to the target role.
 3. Are open-ended and structured so a strong answer takes under 60 seconds.
-4. Probe ownership, evidence, and role relevance — not just description.
+4. Probe ownership, evidence, and role relevance - not just description.
 5. Cover a diverse range of competencies (technical depth, leadership, problem-solving, stakeholder management, metrics/impact).
 
 Return ONLY valid JSON. No explanation. No markdown fences. Format:

@@ -1,5 +1,5 @@
 /**
- * RoleBridge V2 — Wallet Page
+ * RoleBridge V2 - Wallet Page
  * Block 5: Wired to real V2 backend.
  *
  * Features:
@@ -167,7 +167,7 @@ export default function WalletPage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px', flexShrink: 0 }}>
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            Credits added successfully — balance updated.
+            Credits added successfully - balance updated.
           </div>
         )}
 
@@ -282,7 +282,7 @@ export default function WalletPage() {
               Transaction history is available on your{' '}
               <a href="https://app.agnic.ai/transactions" target="_blank" rel="noopener noreferrer" className="wallet-link">Agnic Dashboard</a>.
               <br />
-              We show your current balance above — all usage is billed per-call through Agnic.
+              We show your current balance above - all usage is billed per-call through Agnic.
             </div>
           </div>
         </div>
@@ -359,7 +359,7 @@ export default function WalletPage() {
             </div>
 
             <div className="topup-summary">
-              Adding <strong>${finalAmount || '—'}</strong> → new balance will be <strong>${(displayBalance + (finalAmount || 0)).toFixed(2)}</strong>
+              Adding <strong>${finalAmount || '-'}</strong> → new balance will be <strong>${(displayBalance + (finalAmount || 0)).toFixed(2)}</strong>
             </div>
 
             <button

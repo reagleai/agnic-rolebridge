@@ -71,7 +71,7 @@ export default function Navbar() {
       }
     } catch (err) {
       if (err.status === 401) {
-        // Session expired — clear local auth
+        // Session expired - clear local auth
         localStorage.removeItem('rb_session_token');
         localStorage.removeItem('rb_v2_user');
         localStorage.removeItem('rb_v2_balance');
@@ -344,7 +344,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <h3 className="auth-modal__title">Create your account</h3>
-                  <p className="auth-modal__sub">New Agnic users get <strong className="text-primary">$5.00 free credits</strong> — no card required.</p>
+                  <p className="auth-modal__sub">New Agnic users get <strong className="text-primary">$5.00 free credits</strong> - no card required.</p>
                 </>
               )}
 

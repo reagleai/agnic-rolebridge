@@ -1,5 +1,5 @@
 /**
- * V2 LLM adapter — Agnic AI Gateway.
+ * V2 LLM adapter - Agnic AI Gateway.
  * Block 0 - _shared/v2_llm.ts
  *
  * Replaces the V1 OpenRouter adapter (_shared/llm.ts) with Agnic's
@@ -24,7 +24,7 @@ import {
   TIMEOUT_REPORT_MS,
 } from "./v2_config.ts";
 
-// ── Default model — single model for all tasks (Pay-As-You-Go) ──
+// ── Default model - single model for all tasks (Pay-As-You-Go) ──
 // Defined in v2_config.ts as DEFAULT_MODEL.
 
 // Allow per-task overrides via env vars (same pattern as V1)

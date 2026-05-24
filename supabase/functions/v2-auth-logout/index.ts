@@ -1,9 +1,9 @@
 /**
- * V2 Auth Logout — Clear session
+ * V2 Auth Logout - Clear session
  * Block 1 - supabase/functions/v2-auth-logout/index.ts
  *
  * Invalidates the RoleBridge session token in the database.
- * The Agnic access_token is NOT revoked — the user stays logged into
+ * The Agnic access_token is NOT revoked - the user stays logged into
  * Agnic and can re-authorize RoleBridge at any time.
  */
 
@@ -31,7 +31,7 @@ serve(async (req) => {
       null;
 
     if (!sessionToken) {
-      // Already logged out — no-op, return success
+      // Already logged out - no-op, return success
       return new Response(
         JSON.stringify({ ok: true, message: "Already signed out." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },

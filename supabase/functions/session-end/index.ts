@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
         }).catch((err) => console.warn("Fire-and-forget report-worker invoke failed (cron will retry):", err));
       }
     } catch {
-      // Non-blocking — cron will pick it up
+      // Non-blocking - cron will pick it up
     }
 
     return jsonResponse(

@@ -213,7 +213,7 @@ serve(async (req) => {
           return jsonResponse({ status: "already_ready" }, 200);
         }
       } else {
-        // No report exists — look up session owner and create one
+        // No report exists - look up session owner and create one
         const { data: session } = await db
           .from("sessions")
           .select("v2_user_id")
@@ -253,7 +253,7 @@ serve(async (req) => {
       }
       reportRow = data;
     } else {
-      // Cron invocation — claim oldest pending
+      // Cron invocation - claim oldest pending
       const { data: pendingReports } = await db
         .from("v2_reports")
         .select("*")
@@ -403,10 +403,10 @@ serve(async (req) => {
         }
       } catch (err) {
         console.warn("[v2-report-worker] Email send error:", err);
-        // Non-fatal — report is still in the DB for on-screen display
+        // Non-fatal - report is still in the DB for on-screen display
       }
     } else {
-      console.warn("[v2-report-worker] RESEND_API_KEY not set — email skipped");
+      console.warn("[v2-report-worker] RESEND_API_KEY not set - email skipped");
     }
 
     return jsonResponse({ status: "processed", report_id: reportId, session_id: sessionId }, 200);

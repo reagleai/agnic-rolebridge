@@ -137,7 +137,7 @@ serve(async (req) => {
       .insert({
         session_id: sessionId,
         user_id: userId,
-        report_json: {},  // Empty — will be filled by v2-report-worker
+        report_json: {},  // Empty - will be filled by v2-report-worker
         status: "pending",
       })
       .select("id")
@@ -145,14 +145,14 @@ serve(async (req) => {
 
     if (reportError) {
       console.error("[v2-session-end] Report queue error:", reportError);
-      // Non-fatal — session is already ended
+      // Non-fatal - session is already ended
     }
 
     // ── Increment session_count on v2_users ──
     try {
       await incrementSessionCount(db, userId);
     } catch (err) {
-      // Non-fatal — just log
+      // Non-fatal - just log
       console.warn("[v2-session-end] Failed to increment session_count:", err);
     }
 
@@ -180,7 +180,7 @@ serve(async (req) => {
         }
       }
     } catch (err) {
-      // Non-fatal — the report row is in 'pending' state and the frontend polls
+      // Non-fatal - the report row is in 'pending' state and the frontend polls
       console.warn("[v2-session-end] Report worker invocation exception:", err);
       workerStatus = "invoke_failed";
     }

@@ -1,5 +1,5 @@
 /**
- * RoleBridge V2 — Interview Page
+ * RoleBridge V2 - Interview Page
  * Blocks 3+7: Wired to real V2 backend + Gladia STT.
  *
  * Fixes:
@@ -347,7 +347,7 @@ export default function InterviewPage() {
       }
 
       setTextAnswer('');
-      // Invalidate cached STT URL — Gladia WebSocket URLs are single-use
+      // Invalidate cached STT URL - Gladia WebSocket URLs are single-use
       sttWsUrlRef.current = null;
       setInputMode('voice'); // reset to voice mode for next question
       submittingRef.current = false;
@@ -475,7 +475,7 @@ export default function InterviewPage() {
       doSubmit(transcript);
     } else {
       setInputMode('text');
-      setSubmitError('Recording too short — please type your answer.');
+      setSubmitError('Recording too short - please type your answer.');
     }
   };
 
@@ -483,7 +483,7 @@ export default function InterviewPage() {
   useEffect(() => {
     if (sttError && sttError !== 'mic_denied') {
       setInputMode('text');
-      setSubmitError('Voice recording error — switched to text mode.');
+      setSubmitError('Voice recording error - switched to text mode.');
     }
   }, [sttError]);
 

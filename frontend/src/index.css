@@ -1790,10 +1790,10 @@ li {
 }
 
 /* ════════════════════════════════════════════════════════════
-   V2 NEW STYLES — Pay-As-You-Go Prototype
+   V2 NEW STYLES - Pay-As-You-Go Prototype
    ════════════════════════════════════════════════════════════ */
 
-/* ── Agnic sign-in button — Emerald themed ── */
+/* ── Agnic sign-in button - Emerald themed ── */
 .btn-agnic-signin {
   display: inline-flex;
   align-items: center;
@@ -1865,7 +1865,7 @@ li {
   gap: var(--space-3);
 }
 
-/* Balance pill — rendered as a Link */
+/* Balance pill - rendered as a Link */
 .navbar-balance {
   display: flex;
   align-items: center;
@@ -3200,7 +3200,7 @@ li {
 }
 
 /* ════════════════════════════════════════════════════════════
-   SETUP PAGE — RESUME MODE TABS
+   SETUP PAGE - RESUME MODE TABS
    ════════════════════════════════════════════════════════════ */
 
 .resume-mode-tabs {
@@ -3943,13 +3943,13 @@ li {
   min-height: 110px;
 }
 
-/* Fix: setup card max-width — allow wider than global 560px */
+/* Fix: setup card max-width - allow wider than global 560px */
 .setup-card {
   max-width: 640px;
   width: 100%;
 }
 
-/* Fix: landing hero steps — mobile wrap + spacing */
+/* Fix: landing hero steps - mobile wrap + spacing */
 .landing-hero__steps {
   display: flex;
   flex-wrap: wrap;
@@ -3980,7 +3980,7 @@ li {
   padding-top: var(--space-2);
 }
 
-/* Fix: navbar responsive — collapse on mobile */
+/* Fix: navbar responsive - collapse on mobile */
 @media (max-width: 540px) {
   .navbar-wordmark {
     display: none;

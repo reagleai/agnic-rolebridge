@@ -6,7 +6,7 @@
 -- except for one new nullable FK column on `sessions`.
 
 -- ──────────────────────────────────────────────────────────────
--- 1. v2_users — Agnic-authenticated users with persistent tokens
+-- 1. v2_users - Agnic-authenticated users with persistent tokens
 -- ──────────────────────────────────────────────────────────────
 
 CREATE TABLE v2_users (
@@ -30,7 +30,7 @@ CREATE INDEX idx_v2_users_agnic_id ON v2_users(agnic_user_id);
 CREATE INDEX idx_v2_users_rb_session ON v2_users(rb_session_token);
 
 -- ──────────────────────────────────────────────────────────────
--- 2. v2_profiles — Career + resume data (separate from auth)
+-- 2. v2_profiles - Career + resume data (separate from auth)
 -- ──────────────────────────────────────────────────────────────
 
 CREATE TABLE v2_profiles (
@@ -53,7 +53,7 @@ CREATE TABLE v2_profiles (
 CREATE INDEX idx_v2_profiles_user ON v2_profiles(user_id);
 
 -- ──────────────────────────────────────────────────────────────
--- 3. v2_reports — Persisted reports for on-screen display + Realtime push
+-- 3. v2_reports - Persisted reports for on-screen display + Realtime push
 -- ──────────────────────────────────────────────────────────────
 
 CREATE TABLE v2_reports (
@@ -81,7 +81,7 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS v2_user_id UUID REFERENCES v2_user
 CREATE INDEX IF NOT EXISTS idx_sessions_v2_user ON sessions(v2_user_id);
 
 -- ──────────────────────────────────────────────────────────────
--- 5. RLS — enabled with service_role bypass (matches V1 pattern)
+-- 5. RLS - enabled with service_role bypass (matches V1 pattern)
 -- ──────────────────────────────────────────────────────────────
 
 ALTER TABLE v2_users ENABLE ROW LEVEL SECURITY;

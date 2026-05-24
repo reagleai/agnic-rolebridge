@@ -20,7 +20,7 @@ import {
   MAX_PROFILE_FIELD_LEN,
 } from "../_shared/v2_config.ts";
 
-// Allowed profile fields — reject anything else
+// Allowed profile fields - reject anything else
 const ALLOWED_FIELDS = [
   "name",
   "headline",
@@ -89,7 +89,7 @@ serve(async (req) => {
     const db = getSupabaseClient();
 
     // ═══════════════════════════════════
-    // GET — Fetch profile
+    // GET - Fetch profile
     // ═══════════════════════════════════
     if (req.method === "GET") {
       const { data: profile, error } = await db
@@ -125,7 +125,7 @@ serve(async (req) => {
     }
 
     // ═══════════════════════════════════
-    // PUT — Upsert profile
+    // PUT - Upsert profile
     // ═══════════════════════════════════
     if (req.method === "PUT") {
       let body: Record<string, unknown>;
@@ -181,7 +181,7 @@ serve(async (req) => {
     }
 
     // ═══════════════════════════════════
-    // DELETE — Clear profile
+    // DELETE - Clear profile
     // ═══════════════════════════════════
     if (req.method === "DELETE") {
       const { error } = await db

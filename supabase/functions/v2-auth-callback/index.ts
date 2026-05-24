@@ -1,5 +1,5 @@
 /**
- * V2 Auth Callback — Agnic OAuth Code Exchange
+ * V2 Auth Callback - Agnic OAuth Code Exchange
  * Block 1 - supabase/functions/v2-auth-callback/index.ts
  *
  * Flow:

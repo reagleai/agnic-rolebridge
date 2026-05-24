@@ -90,7 +90,7 @@ const SECTION_MAP: Record<string, string> = {
   expertise: "Skills",
   competencies: "Skills",
 
-  // Full Resume (V2 — skips section extraction)
+  // Full Resume (V2 - skips section extraction)
   "full resume": "Full Resume",
 };
 

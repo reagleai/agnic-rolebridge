@@ -155,7 +155,7 @@ export function endSession(id) {
 }
 
 // ══════════════════════════════════════════════════
-// V2 Endpoint wrappers — Auth
+// V2 Endpoint wrappers - Auth
 // ══════════════════════════════════════════════════
 
 /** POST /v2-auth-callback - exchange OAuth code for RoleBridge session */
@@ -177,7 +177,7 @@ export function authLogout() {
 }
 
 // ══════════════════════════════════════════════════
-// V2 Endpoint wrappers — Balance
+// V2 Endpoint wrappers - Balance
 // ══════════════════════════════════════════════════
 
 /** GET /v2-balance - get current Agnic wallet balance */
@@ -186,7 +186,7 @@ export function getBalance() {
 }
 
 // ══════════════════════════════════════════════════
-// V2 Endpoint wrappers — Sessions (to be wired in Block 2)
+// V2 Endpoint wrappers - Sessions (to be wired in Block 2)
 // ══════════════════════════════════════════════════
 
 /** POST /v2-sessions - create a new V2 session */
@@ -234,7 +234,7 @@ export function v2RetryReport(sessionId) {
 }
 
 // ══════════════════════════════════════════════════
-// V2 Endpoint wrappers — STT
+// V2 Endpoint wrappers - STT
 // ══════════════════════════════════════════════════
 
 /** GET /v2-stt-session/:id - get Gladia WebSocket URL (authenticated) */
@@ -243,7 +243,7 @@ export function v2SttSession(id) {
 }
 
 // ══════════════════════════════════════════════════
-// V2 Endpoint wrappers — Profile
+// V2 Endpoint wrappers - Profile
 // ══════════════════════════════════════════════════
 
 /** GET /v2-profile - get user profile */

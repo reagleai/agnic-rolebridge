@@ -1,5 +1,5 @@
 /**
- * RoleBridge V2 — Auth Callback Page
+ * RoleBridge V2 - Auth Callback Page
  * Block 1 - frontend/src/components/AuthCallback.jsx
  *
  * Handles the redirect from Agnic OAuth:

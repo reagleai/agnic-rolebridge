@@ -5,7 +5,7 @@ Interview Pressure-Test · Powered by AI
 RoleBridge V2 is an AI-powered interview simulation platform designed for career-transition candidates. It takes your real resume and target job description, generating smart follow-up questions to simulate the pressure of a real interview and providing comprehensive, multi-dimensional feedback.
 
 ## Problem
-Candidates, particularly career changers, often have resumes strong enough to pass the initial screening. However, the real failure mode happens during the interview when the interviewer starts probing—asking for specific details, testing ownership, and pushing for concrete evidence. Under this pressure, answers can easily become vague, relying on old functional language rather than speaking like the targeted role.
+Candidates, particularly career changers, often have resumes strong enough to pass the initial screening. However, the real failure mode happens during the interview when the interviewer starts probing-asking for specific details, testing ownership, and pushing for concrete evidence. Under this pressure, answers can easily become vague, relying on old functional language rather than speaking like the targeted role.
 
 ## Solution
 RoleBridge V2 bridges this gap by directly testing how well your story holds up under scrutiny. It grounds its interview simulations in your actual work experience and the specific job you're targeting. During the simulation, when your answers lack depth or clarity, the AI dynamically pushes back with targeted follow-up questions, acting just like a real hiring manager.

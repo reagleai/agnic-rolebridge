@@ -147,7 +147,7 @@ serve(async (req) => {
     // Validate question count (6-15, default 6)
     const qCount = Math.max(MIN_QUESTION_COUNT, Math.min(MAX_QUESTION_COUNT, parseInt(question_count) || DEFAULT_QUESTION_COUNT));
 
-    // Validate section name — allow "Full Resume" as a special case
+    // Validate section name - allow "Full Resume" as a special case
     let canonicalSection: string;
     const isFullResume = section_name?.trim().toLowerCase() === "full resume";
 
@@ -227,7 +227,7 @@ serve(async (req) => {
       }
 
       if (raw.length < qCount) {
-        console.warn(`[v2-session-setup] LLM returned ${raw.length}/${qCount} questions — using what we have`);
+        console.warn(`[v2-session-setup] LLM returned ${raw.length}/${qCount} questions - using what we have`);
       }
 
       // Sanitize and normalize

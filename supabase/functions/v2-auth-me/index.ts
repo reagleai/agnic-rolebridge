@@ -1,5 +1,5 @@
 /**
- * V2 Auth Me — Return current user info
+ * V2 Auth Me - Return current user info
  * Block 1 - supabase/functions/v2-auth-me/index.ts
  *
  * Called by the frontend on app load and after route changes to check

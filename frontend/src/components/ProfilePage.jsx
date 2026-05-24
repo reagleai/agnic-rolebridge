@@ -1,5 +1,5 @@
 /**
- * RoleBridge V2 — Profile Page
+ * RoleBridge V2 - Profile Page
  * Block 6: Wired to real V2 backend.
  *
  * Features:
@@ -232,7 +232,7 @@ export default function ProfilePage() {
           </div>
           {completionPct === 100 && (
             <p className="profile-completion__note profile-completion__note--done">
-              ✓ Profile complete — you can import your resume in Setup
+              ✓ Profile complete - you can import your resume in Setup
             </p>
           )}
           {completionPct < 100 && (
@@ -349,7 +349,7 @@ export default function ProfilePage() {
               <label className="form-label">Transition Notes <span className="form-label-optional">(optional)</span></label>
               <textarea
                 className="form-textarea"
-                placeholder="Anything specific about your transition context — e.g. moving from IC to leadership, changing industry, returning after a gap…"
+                placeholder="Anything specific about your transition context - e.g. moving from IC to leadership, changing industry, returning after a gap…"
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 rows={3}
@@ -368,7 +368,7 @@ export default function ProfilePage() {
             </div>
 
             <p className="profile-section__desc">
-              Save your resume here once — then import it with one click in any interview setup, without re-uploading every time.
+              Save your resume here once - then import it with one click in any interview setup, without re-uploading every time.
             </p>
 
             {/* PDF upload */}

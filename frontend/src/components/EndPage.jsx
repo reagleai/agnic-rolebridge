@@ -1,10 +1,10 @@
 /**
- * RoleBridge V2 — End Page
+ * RoleBridge V2 - End Page
  * Block 4: Wired to real V2 backend.
  *
  * Fixes:
  * - Issue #4: Direct URL access shows redirect if no valid session
- * - Issue #8: Auth guard — redirects unauthenticated users
+ * - Issue #8: Auth guard - redirects unauthenticated users
  *
  * Features:
  * - Polls v2-report endpoint until report is ready
@@ -103,13 +103,13 @@ export default function EndPage() {
       if (!mountedRef.current) return;
 
       if (err.status === 404) {
-        // Report not yet created — keep polling
+        // Report not yet created - keep polling
         setReportStatus('pending');
       } else if (err.status === 401) {
         navigate('/', { replace: true });
       } else {
         console.error('Report fetch error:', err);
-        // Keep polling — may be transient
+        // Keep polling - may be transient
       }
       setPollCount(c => c + 1);
     }
@@ -140,7 +140,7 @@ export default function EndPage() {
       }
       if (mountedRef.current && reportStatus !== 'ready') {
         setReportStatus('failed');
-        setError('Report generation timed out. It may still be processing — check your email.');
+        setError('Report generation timed out. It may still be processing - check your email.');
       }
     }, 90_000);
 
@@ -175,7 +175,7 @@ export default function EndPage() {
         }
         if (mountedRef.current && reportStatus !== 'ready') {
           setReportStatus('failed');
-          setError('Report generation timed out. It may still be processing — check your email.');
+          setError('Report generation timed out. It may still be processing - check your email.');
         }
       }, 90_000);
     }
@@ -256,7 +256,7 @@ export default function EndPage() {
             {reportStatus === 'processing'
               ? 'Generating your evaluation report…'
               : pollCount > 10
-                ? 'Still working on your report — this is taking longer than usual…'
+                ? 'Still working on your report - this is taking longer than usual…'
                 : 'Preparing report generation…'}
           </p>
           <span className="evaluating-sub">Gemini Flash · Agnic AI Gateway</span>
@@ -393,7 +393,7 @@ export default function EndPage() {
       )}
 
       <footer className="landing-footer">
-        <div className="landing-footer__main">RoleBridge — Interview pressure-testing for career-transition candidates.</div>
+        <div className="landing-footer__main">RoleBridge - Interview pressure-testing for career-transition candidates.</div>
         <div className="landing-footer__sub">
           Powered by Agnic · Built by Ajay Sharma ·{' '}
           <a href="https://www.linkedin.com/in/workwithajay/" target="_blank" rel="noopener noreferrer">LinkedIn</a>

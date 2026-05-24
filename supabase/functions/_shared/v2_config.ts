@@ -1,13 +1,13 @@
 /**
- * V2 Configuration — Single source of truth for all configurable constants.
+ * V2 Configuration - Single source of truth for all configurable constants.
  * _shared/v2_config.ts
  *
  * Every hardcoded value that a developer might want to change without
- * touching core logic lives here. Import from this file — do NOT
+ * touching core logic lives here. Import from this file - do NOT
  * re-hardcode in individual function files.
  *
  * Sections:
- *   1. LLM — model, gateway, retry
+ *   1. LLM - model, gateway, retry
  *   2. Inference parameters
  *   3. Agnic API endpoints
  *   4. Auth / OAuth
@@ -21,13 +21,13 @@
  */
 
 // ─────────────────────────────────────────────
-// 1. LLM — Model & Gateway
+// 1. LLM - Model & Gateway
 // ─────────────────────────────────────────────
 
 /** Default model used for all tasks when no env-var override is set. */
 export const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
-/** Agnic AI Gateway — OpenAI-compatible chat completions endpoint. */
+/** Agnic AI Gateway - OpenAI-compatible chat completions endpoint. */
 export const AGNIC_GATEWAY_URL = "https://api.agnic.ai/v1/chat/completions";
 
 /** Maximum number of automatic retries for LLM calls (rate-limit + JSON parse). */
@@ -74,7 +74,7 @@ export const TIMEOUT_REPORT_MS = 90_000;
 /** Agnic OAuth token endpoint (authorization code exchange + refresh). */
 export const AGNIC_TOKEN_ENDPOINT = "https://api.agnic.ai/oauth/token";
 
-/** Agnic /api/me endpoint — returns user info from the access token. */
+/** Agnic /api/me endpoint - returns user info from the access token. */
 export const AGNIC_ME_ENDPOINT = "https://api.agnic.ai/api/me";
 
 /** Agnic OpenID Connect userinfo endpoint. */

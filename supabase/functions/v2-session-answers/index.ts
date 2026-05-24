@@ -8,7 +8,7 @@
  * 3. LLM-evaluate the answer via Agnic Gateway (user's token)
  * 4. Apply hard-rule overrides (total cap, followup depth, core exhaustion)
  * 5. Build transcript turns (answer + optional next question)
- * 6. Persist to DB — CRITICAL: branch SQL by next_action to avoid null::jsonb
+ * 6. Persist to DB - CRITICAL: branch SQL by next_action to avoid null::jsonb
  * 7. Return next_action + next_question + session_stats
  *
  * V2 differences from V1:
@@ -125,7 +125,7 @@ function determineNextAction(
   questionIndex: number,
   coreQuestionsLength: number,
 ): "followup" | "next_question" | "end_session" {
-  // Hard rule 0: absolute cap — total answers must not exceed ABSOLUTE_CAP_MULTIPLIER× core count
+  // Hard rule 0: absolute cap - total answers must not exceed ABSOLUTE_CAP_MULTIPLIER× core count
   const absoluteCap = coreQuestionsLength * ABSOLUTE_CAP_MULTIPLIER;
   if (totalQuestions + 1 >= absoluteCap) {
     return "end_session";
@@ -138,7 +138,7 @@ function determineNextAction(
   if (llmAction === "followup" && followupDepth >= MAX_FOLLOWUP_DEPTH) {
     return "next_question";
   }
-  // Hard rule 3: core exhaustion — no more core questions to advance to
+  // Hard rule 3: core exhaustion - no more core questions to advance to
   if (
     llmAction === "next_question" &&
     questionIndex + 1 >= coreQuestionsLength
@@ -423,7 +423,7 @@ serve(async (req) => {
     }
     // end_session: nextQuestion and questionTurn stay null
 
-    // ── Database update — CRITICAL: branch by action ──
+    // ── Database update - CRITICAL: branch by action ──
     if (finalAction === "end_session" || !questionTurn) {
       // Append ONLY the answer turn. Do NOT append null.
       const { error: upErr } = await db

@@ -1,9 +1,9 @@
 /**
- * RoleBridge Frontend — Configuration constants.
+ * RoleBridge Frontend - Configuration constants.
  * frontend/src/lib/config.js
  *
  * Single source of truth for all hardcoded constants in the frontend.
- * Import from this file — do NOT re-hardcode values in components or hooks.
+ * Import from this file - do NOT re-hardcode values in components or hooks.
  *
  * Note: Runtime environment variables (Supabase URL, anon key, Agnic client ID)
  * stay in frontend/.env as VITE_* vars and are NOT moved here.

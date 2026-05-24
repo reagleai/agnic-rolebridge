@@ -86,7 +86,7 @@ serve(async (req) => {
     }
 
     if (session.status === "setup") {
-      // Session exists but not set up yet — return setup state
+      // Session exists but not set up yet - return setup state
       return jsonResponse(
         {
           status: "setup",
