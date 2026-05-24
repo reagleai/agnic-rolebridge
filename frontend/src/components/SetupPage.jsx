@@ -325,6 +325,15 @@ export default function SetupPage() {
               <div
                 className={`drop-zone ${pdfName ? 'drop-zone--filled' : ''}`}
                 onClick={() => fileRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileRef.current?.click();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload PDF resume"
                 onDrop={handleDrop}
                 onDragOver={e => e.preventDefault()}
               >
