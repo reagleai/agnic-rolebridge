@@ -160,8 +160,16 @@ export default function SetupPage() {
       }
       return;
     }
+    if (finalResume.length > 50000) {
+      setError('Resume text is too long (max 50,000 characters). Please condense it.');
+      return;
+    }
     if (jdText.length < 50) {
       setError('Job description must be at least 50 characters.');
+      return;
+    }
+    if (jdText.length > 50000) {
+      setError('Job description is too long (max 50,000 characters). Please condense it.');
       return;
     }
 
@@ -376,10 +384,11 @@ export default function SetupPage() {
                 className="form-textarea"
                 placeholder="Paste your resume text here (min 50 characters)…"
                 value={resumeText}
+                maxLength={50000}
                 onChange={e => setResumeText(e.target.value)}
                 rows={7}
               />
-              <span className="char-count">{resumeText.length} chars</span>
+              <span className="char-count">{resumeText.length} / 50000 chars</span>
             </div>
           )}
 
@@ -416,10 +425,11 @@ export default function SetupPage() {
               className="form-textarea"
               placeholder="Paste the job description here (min 50 characters)…"
               value={jdText}
+              maxLength={50000}
               onChange={e => setJdText(e.target.value)}
               rows={5}
             />
-            <span className="char-count">{jdText.length} chars</span>
+            <span className="char-count">{jdText.length} / 50000 chars</span>
           </div>
 
           {/* ── Section ── */}
