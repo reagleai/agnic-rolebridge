@@ -110,5 +110,9 @@ VITE_AGNIC_CLIENT_ID=your_agnic_client_id
 - **Senior Roles**: Candidates for Staff/Principal engineering roles can practice defending their architectural decisions under pressure, ensuring they demonstrate true ownership.
 - **General Interview Prep**: Anyone can use the platform to identify "fluff" in their answers before the stakes are high, ensuring concrete, evidence-based storytelling.
 
+## Changelog / Recent Fixes
+- **STT Race Condition Fix**: Resolved an issue where a delayed WebSocket closure error would falsely flag a "Voice recording error" after a successfully completed answer submission.
+- **Report Timeout Fix**: Fixed a stale closure bug on the End Page where the 90-second safety timeout would accidentally trigger and overwrite the UI, even if the report had already successfully generated.
+
 ## Screens / Demo Notes
 *(Placeholder: Add screenshots or a quick GIF demonstrating the setup process, the interview interface with dynamic follow-ups, and the final multi-dimensional report.)*
