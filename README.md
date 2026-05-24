@@ -1,14 +1,14 @@
-# RoleBridge V2
+# RoleBridge
 Interview Pressure-Test · Powered by AI
 
 ## Overview
-RoleBridge V2 is an AI-powered interview simulation platform designed for career-transition candidates. It takes your real resume and target job description, generating smart follow-up questions to simulate the pressure of a real interview and providing comprehensive, multi-dimensional feedback.
+RoleBridge is an AI-powered interview simulation platform designed for career-transition candidates. It takes your real resume and target job description, generating smart follow-up questions to simulate the pressure of a real interview and providing comprehensive, multi-dimensional feedback.
 
 ## Problem
 Candidates, particularly career changers, often have resumes strong enough to pass the initial screening. However, the real failure mode happens during the interview when the interviewer starts probing-asking for specific details, testing ownership, and pushing for concrete evidence. Under this pressure, answers can easily become vague, relying on old functional language rather than speaking like the targeted role.
 
 ## Solution
-RoleBridge V2 bridges this gap by directly testing how well your story holds up under scrutiny. It grounds its interview simulations in your actual work experience and the specific job you're targeting. During the simulation, when your answers lack depth or clarity, the AI dynamically pushes back with targeted follow-up questions, acting just like a real hiring manager.
+RoleBridge bridges this gap by directly testing how well your story holds up under scrutiny. It grounds its interview simulations in your actual work experience and the specific job you're targeting. During the simulation, when your answers lack depth or clarity, the AI dynamically pushes back with targeted follow-up questions, acting just like a real hiring manager.
 
 ## Value Proposition
 - **User Benefit**: Helps candidates develop sharper articulation of their real past experience and stronger translation of that work into the target role's language.
@@ -52,7 +52,7 @@ RoleBridge V2 bridges this gap by directly testing how well your story holds up 
 - `vercel.json`: Configuration for deployment.
 
 ## Setup and Installation
-To run RoleBridge V2 locally:
+To run RoleBridge locally:
 
 ### 1. Backend (Supabase)
 Ensure you have the Supabase CLI installed and Docker running.
@@ -77,6 +77,15 @@ npm run dev
 ```
 
 ## Environment Variables
+
+### Backend Secrets
+For local development, copy the `.env.example` file in the root directory to `.env.local` and fill in the required values. Supabase edge functions will automatically pick up secrets from this file when running locally.
+```bash
+cp .env.example .env.local
+```
+*(Note: In production, Supabase edge functions manage their secrets via the Supabase secrets manager.)*
+
+### Frontend Secrets
 Create a `.env` file in the `frontend` directory based on the following placeholders:
 
 ```env
@@ -87,7 +96,6 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 # Agnic OAuth (Register OAuth client at app.agnic.ai)
 VITE_AGNIC_CLIENT_ID=your_agnic_client_id
 ```
-*(Note: Supabase edge functions manage their own secrets (e.g., Agnic tokens, Resend API keys, Gladia API keys) via the Supabase secrets manager.)*
 
 ## Usage
 1. Launch the app and click **Get Started Free** to authenticate via Agnic.
