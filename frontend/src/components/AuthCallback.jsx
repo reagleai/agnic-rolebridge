@@ -118,10 +118,8 @@ export default function AuthCallback() {
           </>
         ) : (
           <>
-            <div className="evaluating-pulse" style={{ marginBottom: '20px' }}>
-              <div className="evaluating-dot" style={{ animationDelay: '0ms' }} />
-              <div className="evaluating-dot" style={{ animationDelay: '150ms' }} />
-              <div className="evaluating-dot" style={{ animationDelay: '300ms' }} />
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+              <span className="spinner" style={{ width: '32px', height: '32px', borderWidth: '3px' }} />
             </div>
             <h3 className="modal-title" style={{ marginBottom: '8px' }}>Signing you in…</h3>
             <p className="auth-modal__note">Connecting to your Agnic account</p>
