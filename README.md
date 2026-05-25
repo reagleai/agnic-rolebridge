@@ -19,6 +19,24 @@ RoleBridge provides an environment where candidates can safely hit their breakin
 4. **Pay-as-you-go:** Practice comfortably knowing you only pay for exactly what you use via your Agnic wallet. If your credits run out, the interview safely pauses—ensuring you're always in control of your spending without any surprise charges.
 5. **Your Final Report:** Upon completion, receive a brutally honest 6-dimension score report (Clarity, Evidence, Ownership, Role-Language, Relevance, Coherence) both on-screen and via email.
 
+## Demo Walkthrough
+
+### 1. Setup & Context Grounding
+![Session Setup](docs/intialization_filled.png)
+*Upload your resume and JD to ground the AI in your specific background and target role.*
+
+### 2. The Pressure Test & Agnic Wallet
+![Interview First Question](docs/interview_session_1st_question.png)
+*Answer via text or Gladia voice. The Agnic wallet integration tracks usage in real-time (top right).*
+
+### 3. Dynamic Pushback
+![Follow-up Question](docs/interview_session_followup_question.png)
+*If your answer is vague, the AI actively pushes back for concrete evidence and outcomes.*
+
+### 4. 6-Dimension Evaluation Report
+![Final Report](docs/endPage_with_report.png)
+*Receive a brutally honest breakdown of your performance across 6 key dimensions.*
+
 ## The Team
 Built by a solo product builder and founder uniquely positioned to leverage AI systems and evaluation pipelines to solve real career transition challenges.
 
