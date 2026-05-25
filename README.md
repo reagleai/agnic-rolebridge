@@ -40,7 +40,7 @@ RoleBridge bridges this gap by directly testing how well your story holds up und
 ### Backend & Infrastructure
 - **Backend**: Supabase (PostgreSQL, Edge Functions via Deno)
 - **Authentication & Wallet**: Agnic (OAuth 2.0, user profiles, and wallet credits)
-- **AI Gateway**: Agnic API Gateway (routing to models like Google Gemini)
+- **AI Gateway**: Agnic API Gateway (routing to models like OpenAI, Anthropic)
 - **Emails**: Resend API (for report delivery)
 - **Voice**: Gladia API (for live Speech-to-Text)
 
