@@ -247,8 +247,8 @@ export default function SetupPage() {
   };
 
   const estimatedCost =
-    questionCount <= 6 ? '$0.30–0.40' :
-      questionCount <= 10 ? '$0.40–0.60' : '$0.60–0.85';
+    questionCount <= 6 ? '$0.15–0.20' :
+      questionCount <= 10 ? '$0.20–0.30' : '$0.30–0.45';
 
   const hasProfileResume = Boolean(savedProfile?.resumeText);
   const profilePdfName = savedProfile?.pdfName || null;
