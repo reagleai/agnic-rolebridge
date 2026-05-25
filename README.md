@@ -19,6 +19,9 @@ RoleBridge provides an environment where candidates can safely hit their breakin
 4. **Pay-as-you-go:** Practice comfortably knowing you only pay for exactly what you use via your Agnic wallet. If your credits run out, the interview safely pauses—ensuring you're always in control of your spending without any surprise charges.
 5. **Your Final Report:** Upon completion, receive a brutally honest 6-dimension score report (Clarity, Evidence, Ownership, Role-Language, Relevance, Coherence) both on-screen and via email.
 
+## The Team
+Built by a solo product builder and founder uniquely positioned to leverage AI systems and evaluation pipelines to solve real career transition challenges.
+
 ## Monetization Model
 - **Agnic OAuth & Wallet:** Users authenticate via Agnic. Their Agnic wallet funds every API call made during the session.
 - **Earn-Per-Generate:** Every AI call routed through the Agnic API Gateway includes our `AGNIC_PARTNER_ID`, earning a commission margin on processed tokens.
@@ -34,6 +37,25 @@ RoleBridge provides an environment where candidates can safely hit their breakin
 - **Voice:** Gladia API for real-time Speech-to-Text via WebSockets.
 - **Email:** Resend API for delivering the post-mortem report.
 - **Deployment:** Vercel (Frontend) and Supabase (Backend).
+
+## Supabase Edge Functions
+RoleBridge relies on a deep backend architecture consisting of 21 specialized Edge Functions:
+
+- `v2-auth-callback`: Exchanges the Agnic OAuth code for a session token.
+- `v2-auth-me`: Retrieves the current user's profile and session validity.
+- `v2-auth-logout`: Invalidates the user's active session.
+- `v2-balance`: Fetches the real-time Agnic wallet balance to drive UI state.
+- `v2-profile`: Manages user profile data (e.g. saved resumes).
+- `v2-sessions`: Initializes a new interview session record in PostgreSQL.
+- `v2-session-setup`: (LLM Call) Extracts resume sections and generates the core interview questions.
+- `v2-session-get`: Rehydrates the active session state for the frontend.
+- `v2-session-answers`: (LLM Call) The core loop—evaluates the user's answer in real-time and triggers dynamic follow-ups.
+- `v2-session-end`: Marks the session as completed and triggers the report worker.
+- `v2-report`: Fetches the final evaluation report for on-screen display.
+- `v2-report-worker`: (LLM Call) Asynchronously generates the 6-dimension report and emails it via Resend.
+- `v2-stt-session`: Generates an authenticated Gladia WebSocket URL for real-time voice input.
+
+*(Note: `session-*`, `stt-*`, and `report-worker` are legacy V1 functions preserved for backward compatibility).*
 
 ## Setup & Environment Variables
 For local development, copy the existing `.env.example` file in the root directory to `.env.local` and fill in the required values. Supabase edge functions will automatically pick up secrets from this file when running locally via `supabase functions serve`. 
