@@ -343,19 +343,19 @@ export default function EndPage() {
             <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Strengths</h2>
               <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#33FFB8', fontSize: '14px' }}>
-                {(report.overall_impression?.strengths || []).map((s, i) => (
+                {(Array.isArray(report.overall_impression?.strengths) ? report.overall_impression.strengths : (report.overall_impression?.strengths ? [report.overall_impression.strengths] : [])).map((s, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{s}</li>
                 ))}
               </ul>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Areas for Improvement</h2>
               <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#FBBF24', fontSize: '14px' }}>
-                {(report.overall_impression?.weaknesses || []).map((w, i) => (
+                {(Array.isArray(report.overall_impression?.weaknesses) ? report.overall_impression.weaknesses : (report.overall_impression?.weaknesses ? [report.overall_impression.weaknesses] : [])).map((w, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{w}</li>
                 ))}
               </ul>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Key Points to Improve</h2>
               <ul style={{ paddingLeft: '20px', margin: '0', color: '#94A3B8', fontSize: '14px', lineHeight: '1.5' }}>
-                {(report.overall_impression?.points_to_improve || []).map((p, i) => (
+                {(Array.isArray(report.overall_impression?.points_to_improve) ? report.overall_impression.points_to_improve : (report.overall_impression?.points_to_improve ? [report.overall_impression.points_to_improve] : [])).map((p, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{p}</li>
                 ))}
               </ul>

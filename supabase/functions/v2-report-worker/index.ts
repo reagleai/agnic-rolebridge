@@ -145,15 +145,15 @@ function buildReportHTML(report: ReportData, sectionName: string, email: string)
     <div style="background:#131A2A;border:1px solid #2A344A;border-radius:12px;padding:20px;margin-bottom:24px;">
       <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#00E5A0;">Strengths</h2>
       <ul style="padding-left:20px;margin:0 0 16px;color:#33FFB8;font-size:14px;">
-        ${(overall.strengths || []).map((s: string) => `<li style="margin-bottom:6px;">${s}</li>`).join("")}
+        ${(Array.isArray(overall.strengths) ? overall.strengths : (overall.strengths ? [overall.strengths] : [])).map((s: any) => `<li style="margin-bottom:6px;">${s}</li>`).join("")}
       </ul>
       <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#00E5A0;">Areas for Improvement</h2>
       <ul style="padding-left:20px;margin:0 0 16px;color:#FBBF24;font-size:14px;">
-        ${(overall.weaknesses || []).map((w: string) => `<li style="margin-bottom:6px;">${w}</li>`).join("")}
+        ${(Array.isArray(overall.weaknesses) ? overall.weaknesses : (overall.weaknesses ? [overall.weaknesses] : [])).map((w: any) => `<li style="margin-bottom:6px;">${w}</li>`).join("")}
       </ul>
       <h2 style="font-size:16px;font-weight:600;margin:0 0 12px;color:#00E5A0;">Key Points to Improve</h2>
       <ul style="padding-left:20px;margin:0;color:#94A3B8;font-size:14px;line-height:1.5;">
-        ${(overall.points_to_improve || []).map((p: string) => `<li style="margin-bottom:6px;">${p}</li>`).join("")}
+        ${(Array.isArray(overall.points_to_improve) ? overall.points_to_improve : (overall.points_to_improve ? [overall.points_to_improve] : [])).map((p: any) => `<li style="margin-bottom:6px;">${p}</li>`).join("")}
       </ul>
     </div>
     <div style="text-align:center;padding:16px;color:#64748B;font-size:12px;">
