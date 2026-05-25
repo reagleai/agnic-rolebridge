@@ -2,25 +2,38 @@
 Interview Pressure-Test · Powered by AI
 
 ## Product Overview
-RoleBridge simulates high-stakes, pressure-tested interviews for mid-career professionals looking to switch industries or roles. By grounding the interview directly in the user's uploaded resume and target job description, RoleBridge generates highly targeted questions. If a candidate provides a vague answer or relies on outdated jargon, the AI dynamically pushes back, ensuring the candidate learns exactly where their narrative breaks down before setting foot in a real interview.
+RoleBridge is an interview practice tool that prepares you for high-stakes career changes. Instead of asking generic questions, it uses your actual resume to find the gaps in your story. When you give a weak or vague answer, RoleBridge pushes back immediately, helping you fix your mistakes in practice so you don't lose the job in the real interview.
 
 ## Value Proposition
-For mid-career professionals making a domain switch, RoleBridge delivers a personalized AI interview pressure-test that sharpens how they translate their real experience into the target role's language — so they walk into the real interview confident, not rehearsed.
+For professionals transitioning between domains or industries, RoleBridge has developed an AI-powered interview prep platform, which results in the ability to translate adjacent experience under pressure, successfully handle tough follow-up questions, and walk into the real interview with confidence. *(Note: Adapted from the exact framing praised by Angelo Casanas).*
 
-## The Problem
-- **The Audience:** Mid-career professionals (25–45) switching industries or functions, where one bad interview means months of setbacks.
-- **The Pain:** They get shortlisted because of their resume, but fail the interview because they can't translate their past work into the new role's language when a hiring manager pushes back.
-- **The Consequence:** Candidates give vague answers, fall back on old-industry jargon, and present an inconsistent narrative—prompting the interviewer to pass.
+## The Problem & Target Customer
+- **The Audience:** Professionals switching between different roles, functions, or industries.
+- **The Core Problem:** They can position themselves well enough on paper to get shortlisted, but break down when interviewers probe deeper.
+- **The Consequence:** Under the pressure of follow-up questions, their answers become vague, inconsistent, or disconnected from the target role's expectations—causing the interviewer to pass.
 
 ## How It Works
-1. **Context Loading:** Upload your resume (or import from your profile) and paste your target job description. The AI identifies the translation gap.
-2. **The Pressure Test:** Answer dynamically generated questions via voice or text. If your answer is weak, the AI does not move on—it pushes back with a targeted follow-up.
-3. **The Credit Wall:** High-intensity LLM usage is funded by the user's Agnic wallet. If the wallet depletes mid-session, a 402 paywall halts the interview at the exact moment of highest intent.
-4. **The Post-Mortem:** Receive a brutally honest 6-dimension score report (Clarity, Evidence, Ownership, Role-Language, Relevance, Coherence) on-screen and via email.
+1. **Upload Your Profile:** Upload your resume and paste your target job description. The AI instantly identifies the gap between where you are and where you want to be.
+2. **The Pressure Test:** Answer dynamically generated questions via voice or text. If your answer is weak, the AI won't let it slide—it pushes back with a targeted follow-up.
+3. **Pay-as-you-go:** High-intensity practice uses your Agnic wallet credits. If your wallet depletes mid-session, a paywall halts the interview at the exact moment you realize you need the practice the most.
+4. **Your Final Report:** Receive a brutally honest 6-dimension score report (Clarity, Evidence, Ownership, Role-Language, Relevance, Coherence) on-screen and via email.
+
+## Competitive Positioning
+*Following Angelo's guidance: "Saying we have no competition hurts credibility."*
+- **Direct Competitors (e.g., Big Interview):** Scripted, static, and lacking real-time, adaptive pushback.
+- **Indirect Competitors (e.g., ChatGPT):** Requires complex prompting, lacks structured scoring, and doesn't enforce the pressure of a real interview.
+- **Our Position:** RoleBridge sits in a unique quadrant—highly adaptive and role-specific. The defensibility lies in our strict evaluation logic and dynamic follow-up chain.
+
+## Market Size & Go-to-Market Strategy
+- **Market Size (TAM/SAM):** Career coaching is a $15B+ global industry, and LinkedIn reports 150M+ job transitions annually. The market is massive, and the demand for high-stakes interview prep carries a very high willingness-to-pay.
+- **Go-to-Market (GTM):** We will initially target high-intent niche communities (e.g., bootcamp graduates, outplacement programs). The free tier serves as lead generation, smoothly transitioning users to our credit-based paywall exactly when they need deeper sparring.
+
+## The Team
+Built by a founder uniquely positioned with experience in AI systems, product operations, and thousands of LLM evaluations. This provides the critical domain knowledge required to build robust AI evaluation pipelines while intimately understanding the exact moment a candidate's narrative breaks down.
 
 ## Monetization Model
-- **Agnic OAuth & Wallet:** Users sign in with their Agnic account. Their Agnic wallet funds every LLM call they make on the platform.
-- **Earn-Per-Generate:** Every LLM call routed through the Agnic API Gateway includes our `AGNIC_PARTNER_ID`, earning us a commission margin on every token processed.
+- **Agnic OAuth & Wallet:** Users sign in with their Agnic account. Their Agnic wallet funds every API call they make on the platform.
+- **Earn-Per-Generate:** Every AI call routed through the Agnic API Gateway includes our `AGNIC_PARTNER_ID`, earning us a commission margin on every token processed.
 - **The 402 Paywall:** We surface a 402 error natively in the UI when credits run out. Hitting a credit wall mid-session (when the candidate realizes their interview narrative has a hole in it) is the highest-intent moment for monetization.
 - **Unit Economics:** Base model cost is optimized (using `gpt-4o-mini` and `claude-3-5-sonnet`), allowing users to be charged $0.50–$1.00 per high-intensity session with gross margins exceeding 90%.
 
@@ -62,5 +75,5 @@ For local development, copy the existing `.env.example` file in the root directo
 *(Note: Production secrets are managed via the Supabase Vault. Ensure `AGNIC_PARTNER_ID` is set to receive token commissions!)*
 
 ## Live Demo & Repository
-- **Live Demo:** https://agnic-rolebridge.vercel.app/
-- **Repository:** https://github.com/reagleai/agnic-rolebridge
+- **Live Demo:** [https://agnic-rolebridge.vercel.app/](https://agnic-rolebridge.vercel.app/)
+- **Repository:** [https://github.com/reagleai/agnic-rolebridge](https://github.com/reagleai/agnic-rolebridge)
