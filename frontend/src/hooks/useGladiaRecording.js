@@ -315,6 +315,9 @@ export default function useGladiaRecording() {
       ws.onclose = () => {
         clearHeartbeat();
         cleanupMedia();
+        const wasRecording = isRecordingRef.current;
+        const wasStopping = isStoppingRef.current;
+        
         isRecordingRef.current = false;
         setIsRecording(false);
         settleStart(false);
@@ -323,6 +326,10 @@ export default function useGladiaRecording() {
             ? Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
             : 1
         );
+
+        if (wasRecording && !wasStopping) {
+          setError('ws_closed_unexpectedly');
+        }
       };
     });
   }, [cleanupMedia, clearHeartbeat, failRecording, handleTranscriptMessage, resolveStop, teardownVoiceSession]);

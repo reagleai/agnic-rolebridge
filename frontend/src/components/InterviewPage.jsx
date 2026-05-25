@@ -497,11 +497,14 @@ export default function InterviewPage() {
   useEffect(() => {
     if (sttError && sttError !== 'mic_denied') {
       if (!submittingRef.current && !isFinishing) {
+        if (finalTranscript.trim().length > 0) {
+          setTextAnswer((prev) => (prev ? prev + ' ' + finalTranscript : finalTranscript));
+        }
         setInputMode('text');
-        setSubmitError('Voice recording error - switched to text mode.');
+        setSubmitError('Voice connection dropped. Your transcript so far has been saved. You can continue typing.');
       }
     }
-  }, [sttError, isFinishing]);
+  }, [sttError, isFinishing, finalTranscript]);
 
   const handleTextSubmit = () => {
     if (textAnswer.trim().length < 3) {
