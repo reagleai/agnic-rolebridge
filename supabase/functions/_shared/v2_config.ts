@@ -24,8 +24,13 @@
 // 1. LLM - Model & Gateway
 // ─────────────────────────────────────────────
 
-/** Default model used for all tasks when no env-var override is set. */
-export const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+/** Default models used for tasks when no env-var override is set. */
+export const DEFAULT_MODELS: Record<string, string> = {
+  section_extraction: "openai/gpt-4o",
+  question_generation: "anthropic/claude-sonnet-4.6",
+  answer_evaluation: "anthropic/claude-sonnet-4.6",
+  report_generation: "anthropic/claude-opus-4.7",
+};
 
 /** Agnic AI Gateway - OpenAI-compatible chat completions endpoint. */
 export const AGNIC_GATEWAY_URL = "https://api.agnic.ai/v1/chat/completions";

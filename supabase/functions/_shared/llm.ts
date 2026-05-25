@@ -10,10 +10,10 @@
 // ── Default model identifiers (overridden by env vars) ──
 
 const DEFAULT_MODELS: Record<string, string> = {
-  section_extraction: "google/gemini-3.1-flash-lite-preview",
-  question_generation: "google/gemini-3.1-flash-lite-preview",
-  answer_evaluation: "google/gemini-3.1-flash-lite-preview",
-  report_generation: "google/gemini-3.1-flash-lite-preview",
+  section_extraction: "google/gemini-3.1-flash-lite",
+  question_generation: "google/gemini-3.1-flash-lite",
+  answer_evaluation: "google/gemini-3.1-flash-lite",
+  report_generation: "google/gemini-3.1-flash-lite",
 };
 
 // Env var keys follow the pattern LLM_MODEL_<TASK_UPPER>

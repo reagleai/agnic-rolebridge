@@ -12,7 +12,7 @@
  */
 
 import {
-  DEFAULT_MODEL,
+  DEFAULT_MODELS,
   AGNIC_GATEWAY_URL,
   LLM_MAX_RETRIES,
   LLM_RETRY_DELAY_MS,
@@ -24,8 +24,8 @@ import {
   TIMEOUT_REPORT_MS,
 } from "./v2_config.ts";
 
-// ── Default model - single model for all tasks (Pay-As-You-Go) ──
-// Defined in v2_config.ts as DEFAULT_MODEL.
+// ── Default models (Pay-As-You-Go) ──
+// Defined in v2_config.ts as DEFAULT_MODELS.
 
 // Allow per-task overrides via env vars (same pattern as V1)
 const ENV_KEY_MAP: Record<string, string> = {
@@ -41,7 +41,7 @@ function getModelForTask(task: string): string {
     const envVal = Deno.env.get(envKey);
     if (envVal) return envVal;
   }
-  return DEFAULT_MODEL;
+  return DEFAULT_MODELS[task] ?? DEFAULT_MODELS.section_extraction;
 }
 
 // ── Helpers ──
