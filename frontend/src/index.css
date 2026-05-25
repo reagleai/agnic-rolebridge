@@ -4100,7 +4100,7 @@ li {
 
 /* ── Interview: progress bar + page padding coordination ── */
 .interview-page {
-  padding-top: calc(var(--topbar-height) + 3px); /* account for 3px progress bar */
+  padding-top: calc(var(--topbar-height) + var(--space-6) + 3px); /* account for 3px progress bar + breathing room */
 }
 
 /* ── Score rings: prevent SVG clipping on Safari ── */

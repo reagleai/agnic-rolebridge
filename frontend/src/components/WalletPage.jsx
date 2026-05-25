@@ -234,7 +234,7 @@ export default function WalletPage() {
             </div>
             <div className="wallet-usage__text">
               <div className="wallet-usage__label">Cost per session</div>
-              <div className="wallet-usage__val">$0.30 – $0.85 depending on question count</div>
+              <div className="wallet-usage__val">$0.40 – $1.20 depending on question count</div>
             </div>
           </div>
           <div className="wallet-usage__item">
@@ -246,7 +246,7 @@ export default function WalletPage() {
             <div className="wallet-usage__text">
               <div className="wallet-usage__label">Sessions remaining</div>
               <div className="wallet-usage__val">
-                ~{Math.floor(displayBalance / 0.50)} sessions at average usage
+                ~{Math.floor(displayBalance / 0.75)} sessions at average usage
               </div>
             </div>
           </div>
