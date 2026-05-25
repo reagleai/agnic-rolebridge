@@ -21,19 +21,23 @@ RoleBridge provides an environment where candidates can safely hit their breakin
 
 ## Demo Walkthrough
 
-### 1. Setup & Context Grounding
+### 1. Landing Page
+![Landing Page](docs/landing.png)
+*Agnic OAuth integrated landing page with a clear value proposition.*
+
+### 2. Setup & Context Grounding
 ![Session Setup](docs/intialization_filled.png)
 *Upload your resume and JD to ground the AI in your specific background and target role.*
 
-### 2. The Pressure Test & Agnic Wallet
+### 3. The Pressure Test & Agnic Wallet
 ![Interview First Question](docs/interview_session_1st_question.png)
 *Answer via text or Gladia voice. The Agnic wallet integration tracks usage in real-time (top right).*
 
-### 3. Dynamic Pushback
+### 4. Dynamic Pushback
 ![Follow-up Question](docs/interview_session_followup_question.png)
 *If your answer is vague, the AI actively pushes back for concrete evidence and outcomes.*
 
-### 4. 6-Dimension Evaluation Report
+### 5. 6-Dimension Evaluation Report
 ![Final Report](docs/endPage_with_report.png)
 *Receive a brutally honest breakdown of your performance across 6 key dimensions.*
 
