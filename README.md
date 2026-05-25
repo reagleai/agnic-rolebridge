@@ -55,8 +55,6 @@ RoleBridge relies on a deep backend architecture consisting of 21 specialized Ed
 - `v2-report-worker`: (LLM Call) Asynchronously generates the 6-dimension report and emails it via Resend.
 - `v2-stt-session`: Generates an authenticated Gladia WebSocket URL for real-time voice input.
 
-*(Note: `session-*`, `stt-*`, and `report-worker` are legacy V1 functions preserved for backward compatibility).*
-
 ## Setup & Environment Variables
 For local development, copy the existing `.env.example` file in the root directory to `.env.local` and fill in the required values. Supabase edge functions will automatically pick up secrets from this file when running locally via `supabase functions serve`. 
 *(Note: Production secrets are managed via the Supabase Vault. Ensure `AGNIC_PARTNER_ID` is set to receive token commissions!)*
