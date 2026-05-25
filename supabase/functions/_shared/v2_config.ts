@@ -133,10 +133,10 @@ export const MAX_QUESTION_COUNT = 15;
 export const DEFAULT_QUESTION_COUNT = 6;
 
 /** Minimum session duration in seconds (regardless of question count). */
-export const MIN_SESSION_DURATION_SECS = 8 * 60;
+export const MIN_SESSION_DURATION_SECS = 30 * 60;
 
 /** Maximum session duration in seconds (cap to prevent runaway sessions). */
-export const MAX_SESSION_DURATION_SECS = 20 * 60;
+export const MAX_SESSION_DURATION_SECS = 30 * 60;
 
 /** Estimated seconds per question, used to calculate session duration. */
 export const SECS_PER_QUESTION = 80;
@@ -170,7 +170,7 @@ export const MIN_JD_LEN = 50;
 export const ANSWER_MIN_LEN = 3;
 
 /** Maximum duration in seconds allowed for a single answer recording. */
-export const MAX_ANSWER_DURATION_SECS = 300;
+export const MAX_ANSWER_DURATION_SECS = 180;
 
 /**
  * Minimum length of extracted section text to be considered "found".

@@ -216,11 +216,11 @@ export default function InterviewPage() {
     return () => clearInterval(sessionTimerRef.current);
   }, [sessionReady, expiresAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Answer timer (60s per question) ──
+  // ── Answer timer (120s per question) ──
   useEffect(() => {
     if (!sessionReady || isSubmitting) return;
 
-    setAnswerSecs(60);
+    setAnswerSecs(120);
     answerTimerRef.current = setInterval(() => {
       setAnswerSecs(s => {
         if (s <= 1) {
@@ -605,14 +605,19 @@ export default function InterviewPage() {
             {/* Answer timer bar */}
             <div className="answer-timer-row">
               <span className="answer-timer-label">Time to answer</span>
-              <span className={`answer-timer-val ${answerSecs < 15 ? 'timer-warn' : ''}`}>
+              <span className={`answer-timer-val ${answerSecs <= 60 ? 'timer-warn' : ''}`}>
                 {formatTime(answerSecs)}
               </span>
             </div>
+            {answerSecs <= 60 && (
+              <div style={{ color: 'var(--color-error)', fontSize: '0.85rem', marginBottom: '8px', textAlign: 'right' }}>
+                Please wrap up your answer.
+              </div>
+            )}
             <div className="answer-timer-track">
               <div className="answer-timer-fill" style={{
-                width: `${(answerSecs / 60) * 100}%`,
-                background: answerSecs < 15 ? 'var(--color-error)' : 'var(--color-primary)',
+                width: `${(answerSecs / 120) * 100}%`,
+                background: answerSecs <= 60 ? 'var(--color-error)' : 'var(--color-primary)',
               }} />
             </div>
 
