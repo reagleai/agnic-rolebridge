@@ -325,11 +325,13 @@ export default function EndPage() {
                           {d.score}/10
                         </td>
                         <td style={{ padding: '12px 16px', borderBottom: '1px solid #2A344A', color: '#94A3B8', lineHeight: '1.5', verticalAlign: 'top' }}>
+                          <strong style={{ color: '#E2E8F0', fontSize: '13px', display: 'block', marginBottom: '4px' }}>Feedback:</strong>
                           {d.why}
                           {d.transcript_evidence && (
-                            <>
-                              <br /><span style={{ display: 'inline-block', marginTop: '6px', padding: '6px 10px', background: 'rgba(0, 229, 160, 0.05)', borderLeft: '3px solid #00E5A0', fontStyle: 'italic', fontSize: '13px', color: '#94A3B8' }}>"{d.transcript_evidence}"</span>
-                            </>
+                            <div style={{ marginTop: '12px' }}>
+                              <strong style={{ color: '#E2E8F0', fontSize: '13px', display: 'block', marginBottom: '4px' }}>Transcript Excerpt:</strong>
+                              <span style={{ display: 'inline-block', padding: '6px 10px', background: 'rgba(0, 229, 160, 0.05)', borderLeft: '3px solid #00E5A0', fontStyle: 'italic', fontSize: '13px', color: '#94A3B8' }}>"{d.transcript_evidence}"</span>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -342,19 +344,19 @@ export default function EndPage() {
             {/* Strengths / Areas for Improvement / Points to Improve */}
             <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Strengths</h2>
-              <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#33FFB8', fontSize: '14px' }}>
+              <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#33FFB8', fontSize: '14px', listStyleType: 'disc' }}>
                 {(Array.isArray(report.overall_impression?.strengths) ? report.overall_impression.strengths : (report.overall_impression?.strengths ? [report.overall_impression.strengths] : [])).map((s, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{s}</li>
                 ))}
               </ul>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Areas for Improvement</h2>
-              <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#FBBF24', fontSize: '14px' }}>
+              <ul style={{ paddingLeft: '20px', margin: '0 0 16px', color: '#FBBF24', fontSize: '14px', listStyleType: 'disc' }}>
                 {(Array.isArray(report.overall_impression?.weaknesses) ? report.overall_impression.weaknesses : (report.overall_impression?.weaknesses ? [report.overall_impression.weaknesses] : [])).map((w, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{w}</li>
                 ))}
               </ul>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px', color: '#00E5A0' }}>Key Points to Improve</h2>
-              <ul style={{ paddingLeft: '20px', margin: '0', color: '#94A3B8', fontSize: '14px', lineHeight: '1.5' }}>
+              <ul style={{ paddingLeft: '20px', margin: '0', color: '#94A3B8', fontSize: '14px', lineHeight: '1.5', listStyleType: 'disc' }}>
                 {(Array.isArray(report.overall_impression?.points_to_improve) ? report.overall_impression.points_to_improve : (report.overall_impression?.points_to_improve ? [report.overall_impression.points_to_improve] : [])).map((p, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{p}</li>
                 ))}

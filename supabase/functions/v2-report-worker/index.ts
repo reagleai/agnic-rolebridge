@@ -107,8 +107,9 @@ function buildReportHTML(report: ReportData, sectionName: string, email: string)
           ${d.score}/10
         </td>
         <td style="padding:12px 16px;border-bottom:1px solid #2A344A;color:#94A3B8;line-height:1.5;">
+          <strong style="color:#E2E8F0;font-size:13px;display:block;margin-bottom:4px;">Feedback:</strong>
           ${d.why}
-          ${d.transcript_evidence ? `<br><span style="display:inline-block;margin-top:6px;padding:6px 10px;background:rgba(0, 229, 160, 0.05);border-left:3px solid #00E5A0;font-style:italic;font-size:13px;color:#94A3B8;">"${d.transcript_evidence}"</span>` : ""}
+          ${d.transcript_evidence ? `<div style="margin-top:12px;"><strong style="color:#E2E8F0;font-size:13px;display:block;margin-bottom:4px;">Transcript Excerpt:</strong><span style="display:inline-block;padding:6px 10px;background:rgba(0, 229, 160, 0.05);border-left:3px solid #00E5A0;font-style:italic;font-size:13px;color:#94A3B8;">"${d.transcript_evidence}"</span></div>` : ""}
         </td>
       </tr>`;
   };
