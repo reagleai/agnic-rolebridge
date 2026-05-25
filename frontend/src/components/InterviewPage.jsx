@@ -598,7 +598,7 @@ export default function InterviewPage() {
               <div className="evaluating-dot" style={{ animationDelay: '300ms' }} />
             </div>
             <p className="evaluating-text">Evaluating your answer…</p>
-            <span className="evaluating-sub">Powered by GPT-4o via Agnic</span>
+            <span className="evaluating-sub">Powered by Claude Sonnet via Agnic</span>
           </div>
         ) : (
           <>
