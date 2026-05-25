@@ -18,10 +18,6 @@ For mid-career professionals making a domain switch, RoleBridge delivers a perso
 3. **The Credit Wall:** High-intensity LLM usage is funded by the user's Agnic wallet. If the wallet depletes mid-session, a 402 paywall halts the interview at the exact moment of highest intent.
 4. **The Post-Mortem:** Receive a brutally honest 6-dimension score report (Clarity, Evidence, Ownership, Role-Language, Relevance, Coherence) on-screen and via email.
 
-<p align="center">
-  <img src="./docs/rolebridge-report.png" width="800" alt="RoleBridge Evaluation Report Demo" />
-</p>
-
 ## Monetization Model
 - **Agnic OAuth & Wallet:** Users sign in with their Agnic account. Their Agnic wallet funds every LLM call they make on the platform.
 - **Earn-Per-Generate:** Every LLM call routed through the Agnic API Gateway includes our `AGNIC_PARTNER_ID`, earning us a commission margin on every token processed.
