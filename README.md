@@ -1,6 +1,9 @@
 # RoleBridge
 Interview Pressure-Test · Powered by AI
 
+**Hackathon:** Agnic Agentic Commerce Pioneers · Track 2 — Monetize Your AI App
+**License:** MIT
+
 ## Product Overview
 RoleBridge is a highly adaptive, role-specific interview simulation platform. It is specifically designed for mid-career professionals transitioning between different roles, functions, or industries. Rather than relying on generic question banks, RoleBridge utilizes the candidate's actual resume and target job description to pinpoint narrative gaps, applying intelligent follow-up pressure exactly where candidates tend to break down in real interviews.
 
@@ -20,6 +23,8 @@ RoleBridge provides an environment where candidates can safely hit their breakin
 5. **Your Final Report:** Upon completion, receive a brutally honest 6-dimension score report (Clarity, Evidence, Ownership, Role-Language, Relevance, Coherence) both on-screen and via email.
 
 ## Demo Walkthrough
+
+▶ **[Watch the 3-minute demo on YouTube](https://youtu.be/N_3dasboA9g)**
 
 ### 1. Landing Page
 ![Landing Page](docs/landing.png)
@@ -42,13 +47,13 @@ RoleBridge provides an environment where candidates can safely hit their breakin
 *Receive a brutally honest breakdown of your performance across 6 key dimensions.*
 
 ## The Team
-Built by a solo product builder and founder uniquely positioned to leverage AI systems and evaluation pipelines to solve real career transition challenges.
+**Ajay** — Solo builder. Background in product operations and AI systems. Built RoleBridge end-to-end in 10 days.
 
 ## Monetization Model
 - **Agnic OAuth & Wallet:** Users authenticate via Agnic. Their Agnic wallet funds every API call made during the session.
-- **Earn-Per-Generate:** Every AI call routed through the Agnic API Gateway includes our `AGNIC_PARTNER_ID`, earning a commission margin on processed tokens.
-- **The 402 Paywall:** When credits run out, a 402 error is surfaced natively in the UI. Hitting a credit wall mid-session represents the highest-intent moment for monetization.
-- **Unit Economics:** The base model cost is optimized (e.g., using `gpt-4o-mini` and `claude-sonnet-4.6`), allowing users to be charged $0.50–$1.00 per high-intensity session with gross margins exceeding 90%.
+- **Earn-Per-Generate:** Every AI call routed through the Agnic API Gateway includes our `AGNIC_PARTNER_ID`, earning a commission margin on processed tokens via the Agnic Partner Program (Tier 2 — 10% per call).
+- **The 402 Paywall:** When credits run out, the Agnic Gateway returns a `402 Payment Required` response. The backend propagates this to the frontend, which surfaces a top-up modal inline — pausing the interview at the highest-intent moment in the session.
+- **Unit Economics:** The base model cost is optimized (e.g., using `gpt-4o-mini` and `claude-sonnet-4.6`), allowing users to be charged $0.50–$1.00 per high-intensity session.
 
 ## Technical Stack
 - **Frontend:** React 19 / Vite SPA, React Router DOM, vanilla CSS, `pdfjs-dist` (client-side PDF parsing).
@@ -77,10 +82,46 @@ RoleBridge relies on a deep backend architecture consisting of 21 specialized Ed
 - `v2-report-worker`: (LLM Call) Asynchronously generates the 6-dimension report and emails it via Resend.
 - `v2-stt-session`: Generates an authenticated Gladia WebSocket URL for real-time voice input.
 
-## Setup & Environment Variables
-For local development, copy the existing `.env.example` file in the root directory to `.env.local` and fill in the required values. Supabase edge functions will automatically pick up secrets from this file when running locally via `supabase functions serve`. 
-*(Note: Production secrets are managed via the Supabase Vault. Ensure `AGNIC_PARTNER_ID` is set to receive token commissions!)*
+## Setup & Running Locally
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/reagleai/agnic-rolebridge.git
+cd agnic-rolebridge
+
+# 2. Install frontend dependencies
+cd frontend && npm install
+
+# 3. Configure environment variables
+cp .env.example .env.local
+# Fill in your keys: AGNIC_CLIENT_ID, AGNIC_CLIENT_SECRET, AGNIC_PARTNER_ID,
+# GLADIA_API_KEY, RESEND_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+# 4. Run the frontend dev server
+npm run dev
+
+# 5. Run Supabase edge functions locally (separate terminal)
+cd ../supabase && supabase functions serve
+```
+
+> **Note:** Production secrets are managed via the Supabase Vault. Ensure `AGNIC_PARTNER_ID` is set to receive token commissions.
+
+## What's Working, What's Not, What's Next
+
+**What's working:**
+- Full end-to-end flow: Agnic OAuth → resume + JD upload → AI question generation → adaptive follow-up loop (voice + text) → 6-dimension report → email delivery.
+- Agnic Partner ID commission accrual is live on every AI call. Wallet balance is displayed in real-time and 402 balance depletion is handled inline with a top-up modal.
+
+**What's not:**
+- The session resume-after-topup flow (restarting from where the session paused mid-interview after a user tops up) is partially implemented but not fully tested end-to-end in production.
+- Voice input (Gladia STT) works but has occasional WebSocket connection drops on slow networks.
+
+**What's next:**
+- Persist session transcripts behind login so users return for a second round (currently deleted after report generation).
+- Add the "Recruiter's Roast" premium mode — a higher-intelligence model playing a deeply skeptical hiring manager specifically targeting the career-switch story.
+- Lock "Ideal Answer Scripts" (corrected answer suggestions) behind a small additional credit spend to add a second monetization layer.
 
 ## Live Demo & Repository
 - **Live Demo:** [https://agnic-rolebridge.vercel.app/](https://agnic-rolebridge.vercel.app/)
+- **Demo Video:** [https://youtu.be/N_3dasboA9g](https://youtu.be/N_3dasboA9g)
 - **Repository:** [https://github.com/reagleai/agnic-rolebridge](https://github.com/reagleai/agnic-rolebridge)
