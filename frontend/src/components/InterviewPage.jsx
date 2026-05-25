@@ -79,6 +79,7 @@ export default function InterviewPage() {
   const submittingRef = useRef(false);
   const answerTimerRef = useRef(null);
   const sessionTimerRef = useRef(null);
+  const gladiaTimeoutRef = useRef(null);
   const mountedRef = useRef(true);
 
   // ── Redirect if not authenticated ──
@@ -216,11 +217,11 @@ export default function InterviewPage() {
     return () => clearInterval(sessionTimerRef.current);
   }, [sessionReady, expiresAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Answer timer (120s per question) ──
+  // ── Answer timer (300s per question) ──
   useEffect(() => {
     if (!sessionReady || isSubmitting) return;
 
-    setAnswerSecs(120);
+    setAnswerSecs(300);
     answerTimerRef.current = setInterval(() => {
       setAnswerSecs(s => {
         if (s <= 1) {
@@ -465,10 +466,23 @@ export default function InterviewPage() {
     if (!started) {
       setInputMode('text');
       setSubmitError('Could not start recording. Please type your answer instead.');
+    } else {
+      // 3-minute max recording limit
+      if (gladiaTimeoutRef.current) clearTimeout(gladiaTimeoutRef.current);
+      gladiaTimeoutRef.current = setTimeout(async () => {
+        const result = await gladiaStop();
+        const transcript = result?.transcript || finalTranscript || '';
+        if (transcript.trim().length >= 3) {
+          setTextAnswer(transcript);
+        }
+        setInputMode('text');
+        setSubmitError('Voice recording limit (3 minutes) reached. You can add more text before the question timer runs out.');
+      }, 180 * 1000);
     }
   };
 
   const handleStopRecording = async () => {
+    if (gladiaTimeoutRef.current) clearTimeout(gladiaTimeoutRef.current);
     const result = await gladiaStop();
     const transcript = result?.transcript || finalTranscript || '';
     if (transcript.trim().length >= 3) {
@@ -616,7 +630,7 @@ export default function InterviewPage() {
             )}
             <div className="answer-timer-track">
               <div className="answer-timer-fill" style={{
-                width: `${(answerSecs / 120) * 100}%`,
+                width: `${(answerSecs / 300) * 100}%`,
                 background: answerSecs <= 60 ? 'var(--color-error)' : 'var(--color-primary)',
               }} />
             </div>

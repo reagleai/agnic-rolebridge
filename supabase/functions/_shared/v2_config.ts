@@ -133,13 +133,13 @@ export const MAX_QUESTION_COUNT = 15;
 export const DEFAULT_QUESTION_COUNT = 6;
 
 /** Minimum session duration in seconds (regardless of question count). */
-export const MIN_SESSION_DURATION_SECS = 30 * 60;
+export const MIN_SESSION_DURATION_SECS = 6 * 300;
 
 /** Maximum session duration in seconds (cap to prevent runaway sessions). */
-export const MAX_SESSION_DURATION_SECS = 30 * 60;
+export const MAX_SESSION_DURATION_SECS = 15 * 300;
 
 /** Estimated seconds per question, used to calculate session duration. */
-export const SECS_PER_QUESTION = 80;
+export const SECS_PER_QUESTION = 300;
 
 /**
  * Multiplier used to compute the absolute answer cap.
