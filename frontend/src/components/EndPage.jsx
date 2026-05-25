@@ -21,9 +21,9 @@ function ScoreRing({ score, size = 64 }) {
   const pct = score / 10;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--color-primary-highlight)" strokeWidth="5" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-primary-highlight)" strokeWidth="5" />
       <circle
-        cx={size/2} cy={size/2} r={r} fill="none"
+        cx={size / 2} cy={size / 2} r={r} fill="none"
         stroke={score >= 8 ? 'var(--color-primary)' : score >= 6 ? 'var(--color-warning)' : 'var(--color-error)'}
         strokeWidth="5"
         strokeDasharray={circ}
@@ -126,7 +126,7 @@ export default function EndPage() {
     // Forcefully start the worker from the frontend.
     // If the backend background task failed to start, this explicitly catches it.
     // If the backend task already started, this gracefully returns 202 immediately.
-    v2RetryReport(sessionId).catch(() => {});
+    v2RetryReport(sessionId).catch(() => { });
 
     // Initial fetch
     fetchReport();
@@ -262,7 +262,7 @@ export default function EndPage() {
                 ? 'Still working on your report - this is taking longer than usual…'
                 : 'Preparing report generation…'}
           </p>
-          <span className="evaluating-sub">Claude 3.5 Sonnet · Agnic AI Gateway</span>
+          <span className="evaluating-sub">Claude 4.6 Sonnet · Agnic AI Gateway</span>
           {pollCount > 10 && (
             <button className="btn-ghost" onClick={handleRetryReport} style={{ marginTop: '16px' }}>
               Retry Report Generation
@@ -294,7 +294,7 @@ export default function EndPage() {
         <div className="report-container report-container--visible">
 
           <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'left', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-            
+
             {/* Summary */}
             <div style={{ background: '#131A2A', border: '1px solid #2A344A', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 8px', color: '#00E5A0' }}>Summary</h2>
