@@ -118,7 +118,6 @@ cd ../supabase && supabase functions serve
 
 **What's next:**
 - Persist session transcripts behind login so users return for a second round (currently deleted after report generation).
-- Add the "Recruiter's Roast" premium mode — a higher-intelligence model playing a deeply skeptical hiring manager specifically targeting the career-switch story.
 - Lock "Ideal Answer Scripts" (corrected answer suggestions) behind a small additional credit spend to add a second monetization layer.
 
 ## Live Demo & Repository
